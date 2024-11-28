@@ -1,0 +1,25 @@
+{
+  "manifest": {
+    "publishingInformation": {
+      "locales": {
+        "en-US": {
+          "name": "Prayer Times (Athan)",
+          "summary": "Muslim prayer times and athan notifications",
+          "description": "Get prayer times and athan notifications",
+          "examplePhrases": [
+            "Alexa, ask prayer times for today's prayers",
+            "Alexa, ask prayer times to set muezzin",
+            "Alexa, ask prayer times to enable notifications"
+          ]
+        }
+      }
+    },
+    "apis": {
+      "custom": {
+        "endpoint": {
+          "uri": "arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${PrayerTimesFunction}"
+        }
+      }
+    }
+  }
+}
