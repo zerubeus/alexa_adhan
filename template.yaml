@@ -6,7 +6,7 @@ Resources:
   PrayerTimesFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: adhan/
+      CodeUri: lambda/
       Handler: app.lambda_handler
       Timeout: 30
       MemorySize: 256

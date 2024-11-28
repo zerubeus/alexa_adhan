@@ -1,0 +1,9 @@
+[flake8]
+extend-ignore = E501,D1,D400,D210,A003,A002,D205,W503,D202,E203
+exclude =
+    .venv
+    .aws-sam
+    .pytest_cache
+    .github
+    .ask
+    /skill-package

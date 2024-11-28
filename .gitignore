@@ -1,2 +1,16 @@
 .venv
 .ask
+
+.vscode
+.idea
+.pytest_cache
+.aws-sam
+.venv
+.terraform
+.env
+*.db
+*.http
+*.egg-info
+*.env
+__pycache__
+*.DS_Store
