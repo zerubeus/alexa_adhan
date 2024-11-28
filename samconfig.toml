@@ -1,0 +1,40 @@
+version = 0.1
+
+[default]
+[default.global.parameters]
+region = "eu-west-1"
+stack_name = "zerubeus-alexa-adhan"
+rollback_on_error = true
+
+[default.build.parameters]
+cached = true
+parallel = true
+
+[default.validate.parameters]
+lint = true
+
+[default.package.parameters]
+resolve_s3 = true
+
+[default.sync.parameters]
+watch = true
+
+[default.local_invoke.parameters]
+warm_containers = "EAGER"
+parameter_overrides = "EnvironmentType=\"local\""
+region = "eu-west-1"
+
+[default.local_start_api.parameters]
+warm_containers = "EAGER"
+parameter_overrides = "EnvironmentType=\"local\""
+region = "eu-west-1"
+
+[default.local_start_lambda.parameters]
+warm_containers = "EAGER"
+
+[default.deploy.parameters]
+capabilities = "CAPABILITY_IAM"
+resolve_s3 = true
+s3_prefix = "zerubeus-alexa-adhan"
+image_repositories = []
+tags = "Application=\"alexa_adhan\" createdBy=\"SAM\" Bill_Application=\"alexa_adhan\" AppManagerCFNStackKey=\"alexa_adhan\""

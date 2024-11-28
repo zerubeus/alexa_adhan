@@ -1,0 +1,55 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: zerubeus-alexa-adhan
+
+Resources:
+  PrayerTimesFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: adhan/
+      Handler: app.lambda_handler
+      Timeout: 30
+      MemorySize: 256
+      Runtime: python3.11
+      Architectures:
+        - arm64
+      Environment:
+        Variables:
+          POWERTOOLS_SERVICE_NAME: prayer-times-service
+      Layers:
+        - !Sub arn:aws:lambda:${AWS::Region}:017000801446:layer:AWSLambdaPowertoolsPythonV3-python311-arm64:4
+        - !Ref PrayerTimesFunctionLayers
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref PreferencesTable
+        - S3ReadPolicy:
+            BucketName: !Ref AthanAudioBucket
+      Events:
+        AlexaSkill:
+          Type: AlexaSkill
+
+  PrayerTimesFunctionLayers:
+    Type: AWS::Serverless::LayerVersion
+    Metadata:
+      BuildMethod: makefile
+    Properties:
+      LayerName: PrayerTimesFunctionLayers
+      Description: dependencies for PrayerTimesFunction
+      ContentUri: lambda_layers/prayer_times_functions_layers/
+      CompatibleRuntimes:
+        - python3.11
+      RetentionPolicy: Retain
+
+  PreferencesTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      AttributeDefinitions:
+        - AttributeName: userId
+          AttributeType: S
+      KeySchema:
+        - AttributeName: userId
+          KeyType: HASH
+      BillingMode: PAY_PER_REQUEST
+
+  AthanAudioBucket:
+    Type: AWS::S3::Bucket

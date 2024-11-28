@@ -1,0 +1,36 @@
+{
+  "interactionModel": {
+    "languageModel": {
+      "invocationName": "prayer times (athan)",
+      "intents": [
+        {
+          "name": "SetMuezzinIntent",
+          "slots": [
+            {
+              "name": "muezzin",
+              "type": "MUEZZIN_LIST"
+            }
+          ],
+          "samples": [
+            "set muezzin to {muezzin}",
+            "change athan voice to {muezzin}"
+          ]
+        },
+        {
+          "name": "EnableNotificationsIntent",
+          "samples": ["enable prayer notifications", "turn on athan"]
+        }
+      ],
+      "types": [
+        {
+          "name": "MUEZZIN_LIST",
+          "values": [
+            { "name": "Abdul Basit" },
+            { "name": "Ali Mulla" },
+            { "name": "Mishary Rashid" }
+          ]
+        }
+      ]
+    }
+  }
+}
