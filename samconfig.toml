@@ -33,6 +33,7 @@ region = "eu-west-1"
 warm_containers = "EAGER"
 
 [default.deploy.parameters]
+profile = "zerbania"
 capabilities = "CAPABILITY_IAM"
 resolve_s3 = true
 s3_prefix = "zerubeus-alexa-adhan"

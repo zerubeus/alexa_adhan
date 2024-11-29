@@ -1,33 +1,37 @@
-.PHONY: build-lambda deploy-lambda deploy-skill deploy
+.PHONY: build-lambda deploy-lambda deploy-skill deploy aws-login
 
 aws-login:
-    aws sso login --profile zerbania
+	aws sso login --profile zerbania
 
 build-lambda:
-    sam build --use-container
+	sam build --use-container
 
 deploy-lambda:
-    sam deploy
+	sam deploy
 
 deploy-skill:
-    $(eval LAMBDA_ARN := $(shell aws cloudformation describe-stacks \
-        --stack-name zerubeus-alexa-adhan \
-        --query 'Stacks[0].Outputs[?OutputKey==`PrayerTimesFunctionArn`].OutputValue' \
-        --output text))
-    
-    ask deploy --force
-    
-    $(eval SKILL_ID := $(shell jq -r '.skillId' .ask/ask-states.json))
-    
-    aws lambda add-permission \
-        --function-name $(LAMBDA_ARN) \
-        --statement-id "AlexaSkill_$(SKILL_ID)" \
-        --action lambda:InvokeFunction \
-        --principal alexa-appkit.amazon.com \
-        --event-source-token $(SKILL_ID)
-    
-    @echo "Skill deployed and linked successfully!"
+	$(eval LAMBDA_ARN := $(shell aws cloudformation describe-stacks \
+		--stack-name zerubeus-alexa-adhan \
+		--query 'Stacks[0].Outputs[?OutputKey==`PrayerTimesFunctionArn`].OutputValue' \
+		--output text \
+		--region eu-west-1 \
+		--profile zerbania))
 
-deploy: build-PrayerTimesFunctionLayers
-    sam deploy
-    make deploy-skill
+	ask deploy
+
+	$(eval SKILL_ID := $(shell jq -r '.profiles.default.skillId' .ask/ask-states.json))
+
+	aws lambda add-permission \
+		--function-name $(LAMBDA_ARN) \
+		--statement-id "AlexaSkill_$(SKILL_ID)" \
+		--action lambda:InvokeFunction \
+		--principal alexa-appkit.amazon.com \
+		--event-source-token $(SKILL_ID) \
+		--region eu-west-1 \
+		--profile zerbania
+
+	@echo "Skill deployed and linked successfully!"
+
+deploy:
+	sam deploy
+	make deploy-skill
