@@ -1,8 +1,13 @@
-.PHONY: build-PrayerTimesFunctionLayers deploy-skill
+.PHONY: build-lambda deploy-lambda deploy-skill deploy
 
-build-PrayerTimesFunctionLayers:
-    mkdir -p "$(ARTIFACTS_DIR)/python"
-    python -m pip install -r requirements.txt -t "$(ARTIFACTS_DIR)/python"
+aws-login:
+    aws sso login --profile zerbania
+
+build-lambda:
+    sam build --use-container
+
+deploy-lambda:
+    sam deploy
 
 deploy-skill:
     $(eval LAMBDA_ARN := $(shell aws cloudformation describe-stacks \
