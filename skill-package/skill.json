@@ -10,16 +10,22 @@
             "Alexa, ask prayer times for today's prayers",
             "Alexa, ask prayer times to set muezzin",
             "Alexa, ask prayer times to enable notifications"
-          ]
+          ],
+          "keywords": ["prayer", "athan", "muslim"],
+          "smallIconUri": "file://assets/en-US_smallIcon.png",
+          "largeIconUri": "file://assets/en-US_largeIcon.png"
         }
-      }
+      },
+      "isAvailableWorldwide": true,
+      "category": "RELIGION_AND_SPIRITUALITY"
     },
     "apis": {
       "custom": {
         "endpoint": {
-          "uri": "arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${PrayerTimesFunction}"
+          "uri": "arn:aws:lambda:eu-west-1:666584770518:function:zerubeus-alexa-adhan-PrayerTimesFunction-ayddWFOGkpBc"
         }
       }
-    }
+    },
+    "manifestVersion": "1.0"
   }
 }
