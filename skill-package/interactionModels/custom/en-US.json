@@ -1,8 +1,36 @@
 {
   "interactionModel": {
     "languageModel": {
-      "invocationName": "prayer times (athan)",
+      "invocationName": "prayer times athan",
       "intents": [
+        {
+          "name": "AMAZON.CancelIntent",
+          "samples": []
+        },
+        {
+          "name": "AMAZON.HelpIntent",
+          "samples": []
+        },
+        {
+          "name": "AMAZON.StopIntent",
+          "samples": []
+        },
+        {
+          "name": "AMAZON.NavigateHomeIntent",
+          "samples": []
+        },
+        {
+          "name": "AMAZON.FallbackIntent",
+          "samples": []
+        },
+        {
+          "name": "GetPrayerTimesIntent",
+          "samples": [
+            "what are the prayer times",
+            "get prayer times",
+            "when are the prayers today"
+          ]
+        },
         {
           "name": "SetMuezzinIntent",
           "slots": [
@@ -25,9 +53,27 @@
         {
           "name": "MUEZZIN_LIST",
           "values": [
-            { "name": "Abdul Basit" },
-            { "name": "Ali Mulla" },
-            { "name": "Mishary Rashid" }
+            {
+              "id": "abdul_basit",
+              "name": {
+                "value": "Abdul Basit",
+                "synonyms": []
+              }
+            },
+            {
+              "id": "ali_mulla",
+              "name": {
+                "value": "Ali Mulla",
+                "synonyms": []
+              }
+            },
+            {
+              "id": "mishary_rashid",
+              "name": {
+                "value": "Mishary Rashid",
+                "synonyms": []
+              }
+            }
           ]
         }
       ]

@@ -11,7 +11,11 @@
             "Alexa, ask prayer times to set muezzin",
             "Alexa, ask prayer times to enable notifications"
           ],
-          "keywords": ["prayer", "athan", "muslim"],
+          "keywords": [
+            "prayer",
+            "athan",
+            "muslim"
+          ],
           "smallIconUri": "file://assets/en-US_smallIcon.png",
           "largeIconUri": "file://assets/en-US_largeIcon.png"
         }

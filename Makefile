@@ -16,32 +16,24 @@ deploy-lambda:
 	sam deploy
 
 deploy-skill:
-	$(eval SKILL_ID := $(shell jq -r '.profiles.default.skillId' .ask/ask-states.json))
-	@if [ -z "$(SKILL_ID)" ]; then \
-			echo "No skill ID found. Creating new skill..."; \
-			make create-skill; \
-	fi
+    $(eval LAMBDA_ARN := $(shell aws cloudformation describe-stacks \
+        --stack-name zerubeus-alexa-adhan \
+        --query 'Stacks[0].Outputs[?OutputKey==`PrayerTimesFunctionArn`].OutputValue' \
+        --output text \
+        --region eu-west-1 \
+        --profile zerbania))
 
-	$(eval LAMBDA_ARN := $(shell aws cloudformation describe-stacks \
-			--stack-name zerubeus-alexa-adhan \
-			--query 'Stacks[0].Outputs[?OutputKey==`PrayerTimesFunctionArn`].OutputValue' \
-			--output text \
-			--region eu-west-1 \
-			--profile zerbania))
+    ask deploy
 
-	ask deploy
-
-	$(eval SKILL_ID := $(shell jq -r '.profiles.default.skillId' .ask/ask-states.json))
-	
-	aws lambda add-permission \
-			--function-name $(LAMBDA_ARN) \
-			--statement-id "AlexaSkill_$(SKILL_ID)" \
-			--action lambda:InvokeFunction \
-			--principal alexa-appkit.amazon.com \
-			--event-source-token $(SKILL_ID) \
-			--region eu-west-1 \
-			--profile zerbania
-
-	@echo "Skill deployed and linked successfully!"
+    $(eval SKILL_ID := $(shell jq -r '.profiles.default.skillId' .ask/ask-states.json))
+    
+    aws lambda add-permission \
+        --function-name $(LAMBDA_ARN) \
+        --statement-id "AlexaSkill_$(SKILL_ID)" \
+        --action lambda:InvokeFunction \
+        --principal alexa-appkit.amazon.com \
+        --event-source-token $(SKILL_ID) \
+        --region eu-west-1 \
+        --profile zerbania
 
 deploy: build-lambda deploy-lambda deploy-skill
