@@ -151,6 +151,7 @@ class GetPrayerTimesIntentHandler(AbstractRequestHandler):
 
         except Exception as e:
             logger.exception(f"Error trying to get prayer times: {e}")
+
             return (
                 handler_input.response_builder.speak(
                     "Sorry, I couldn't fetch the prayer times at the moment."
