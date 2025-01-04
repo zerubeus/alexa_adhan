@@ -16,6 +16,7 @@ Resources:
       Environment:
         Variables:
           POWERTOOLS_SERVICE_NAME: prayer-times-service
+          POWERTOOLS_LOG_LEVEL: INFO
       Layers:
         - !Ref PrayerTimesFunctionLayers
       Policies:
