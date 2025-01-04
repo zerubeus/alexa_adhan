@@ -11,7 +11,11 @@
             "Alexa, ask prayer times to set muezzin",
             "Alexa, ask prayer times to enable notifications"
           ],
-          "keywords": ["prayer", "athan", "muslim"],
+          "keywords": [
+            "prayer",
+            "athan",
+            "muslim"
+          ],
           "smallIconUri": "file://assets/en-US_smallIcon.png",
           "largeIconUri": "file://assets/en-US_largeIcon.png"
         }
@@ -27,11 +31,15 @@
       }
     },
     "permissions": [
-      { "name": "read::alexa:device:all:address:country_and_postal_code" },
-      { "name": "read::alexa:devices:all:geolocation" },
-      { "name": "read::alexa:profile:given_name" },
-      { "name": "read::alexa:profile:name" },
-      { "name": "read::alexa:profile:user_id" }
+      {
+        "name": "alexa::devices:all:geolocation:read"
+      },
+      {
+        "name": "alexa::profile:name:read"
+      },
+      {
+        "name": "alexa:devices:all:address:country_and_postal_code:read"
+      }
     ],
     "manifestVersion": "1.0"
   }
