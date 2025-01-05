@@ -79,14 +79,19 @@ class GetPrayerTimesIntentHandler(AbstractRequestHandler):
             system = handler_input.request_envelope.context.system
             logger.info(f"System context: {system}")
 
-            geo_supported = hasattr(system.device.supported_interfaces, "geolocation")
+            geo_supported = (
+                hasattr(system.device, "supported_interfaces")
+                and hasattr(system.device.supported_interfaces, "geolocation")
+                and system.device.supported_interfaces.geolocation is not None
+            )
+
             logger.info(f"Geolocation supported: {geo_supported}")
 
             if not geo_supported:
                 logger.warning("Device doesn't support geolocation")
                 return (
                     handler_input.response_builder.speak(
-                        "This device doesn't support location features."
+                        "This device doesn't support location features. Please try using the Alexa app or a device with location support."
                     )
                     .set_should_end_session(True)
                     .response
@@ -95,13 +100,27 @@ class GetPrayerTimesIntentHandler(AbstractRequestHandler):
             permissions = system.user.permissions
             logger.info(f"User permissions: {permissions}")
 
-            if permissions and permissions.scopes:
+            if permissions and hasattr(permissions, "scopes"):
                 logger.info(f"Permission scopes: {permissions.scopes}")
-                permission_status = permissions.scopes.get(
-                    "alexa::devices:all:geolocation:read", {}
-                ).get("status")
-                logger.info(f"Geolocation permission status: {permission_status}")
-                permission_granted = permission_status == "GRANTED"
+
+                try:
+                    geolocation_permission = permissions.scopes.__getattribute__(
+                        "alexa::devices:all:geolocation:read"
+                    )
+
+                    logger.info(f"Geolocation permission: {geolocation_permission}")
+
+                    permission_granted = (
+                        geolocation_permission is not None
+                        and hasattr(geolocation_permission, "status")
+                        and geolocation_permission.status == "GRANTED"
+                    )
+
+                except AttributeError:
+                    logger.warning("Could not access geolocation permission")
+                    permission_granted = False
+
+                logger.info(f"Geolocation permission status: {permission_granted}")
             else:
                 logger.warning("No permissions found in request")
                 permission_granted = False
@@ -110,20 +129,21 @@ class GetPrayerTimesIntentHandler(AbstractRequestHandler):
 
             if not permission_granted:
                 logger.info("Requesting geolocation permission")
-                directive = SendRequestDirective(
-                    name="AskFor",
-                    payload={
-                        "@type": "AskForPermissionsConsentRequest",
-                        "@version": "1",
-                        "permissionScope": "alexa::devices:all:geolocation:read",
-                    },
-                )
 
                 return (
                     handler_input.response_builder.speak(
-                        "Prayer Times needs your location. Please enable location sharing in your Alexa app."
+                        "Prayer Times needs your location. Please enable location sharing in your Alexa app settings, then try again."
                     )
-                    .add_directive(directive)
+                    .add_directive(
+                        SendRequestDirective(
+                            name="AskFor",
+                            payload={
+                                "@type": "AskForPermissionsConsentRequest",
+                                "@version": "1",
+                                "permissionScope": "alexa::devices:all:geolocation:read",
+                            },
+                        )
+                    )
                     .set_should_end_session(True)
                     .response
                 )
@@ -143,6 +163,7 @@ class GetPrayerTimesIntentHandler(AbstractRequestHandler):
 
             latitude = geolocation.coordinate.latitude_in_degrees
             longitude = geolocation.coordinate.longitude_in_degrees
+
             logger.info(
                 f"Coordinates retrieved - Latitude: {latitude}, Longitude: {longitude}"
             )
