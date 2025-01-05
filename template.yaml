@@ -2,6 +2,11 @@ AWSTemplateFormatVersion: "2010-09-09"
 Transform: AWS::Serverless-2016-10-31
 Description: zerubeus-alexa-adhan
 
+Parameters:
+  SkillId:
+    Type: String
+    Description: Alexa Skill ID
+
 Resources:
   PrayerTimesFunction:
     Type: AWS::Serverless::Function
@@ -27,6 +32,8 @@ Resources:
       Events:
         AlexaSkill:
           Type: AlexaSkill
+          Properties:
+            SkillId: !Sub ${SkillId}
 
   PrayerTimesFunctionLayers:
     Type: AWS::Serverless::LayerVersion
