@@ -161,6 +161,34 @@ class GetPrayerTimesIntentHandler(AbstractRequestHandler):
             )
 
 
+class ConnectionsResponseHandler(AbstractRequestHandler):
+    def can_handle(self, handler_input):
+        return is_request_type("Connections.Response")(handler_input)
+
+    def handle(self, handler_input):
+        response = handler_input.request_envelope.request
+        if response.status.code == "200":
+            return GetPrayerTimesIntentHandler().handle(handler_input)
+        else:
+            return (
+                handler_input.response_builder.speak(
+                    "I still need location access to provide prayer times. Please enable it in the Alexa app."
+                )
+                .set_should_end_session(True)
+                .response
+            )
+
+
+class SessionEndedRequestHandler(AbstractRequestHandler):
+    def can_handle(self, handler_input):
+        return is_request_type("SessionEndedRequest")(handler_input)
+
+    def handle(self, handler_input):
+        return handler_input.response_builder.response
+
+
+sb.add_request_handler(ConnectionsResponseHandler())
+sb.add_request_handler(SessionEndedRequestHandler())
 sb.add_request_handler(LaunchRequestHandler())
 sb.add_request_handler(SetMuezzinIntentHandler())
 sb.add_request_handler(GetPrayerTimesIntentHandler())
