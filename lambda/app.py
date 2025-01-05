@@ -4,6 +4,7 @@ from typing import Optional
 from aws_lambda_powertools import Logger
 from ask_sdk_core.skill_builder import SkillBuilder
 from ask_sdk_core.dispatch_components import AbstractRequestHandler
+from ask_sdk_model.interfaces.connections import SendRequestDirective
 from ask_sdk_core.utils import is_request_type, is_intent_name
 from ask_sdk_model.ui import SimpleCard
 from services.prayer_service import PrayerService
@@ -99,21 +100,20 @@ class GetPrayerTimesIntentHandler(AbstractRequestHandler):
                 permission_granted = False
 
             if not permission_granted:
+                directive = SendRequestDirective(
+                    name="AskFor",
+                    payload={
+                        "@type": "AskForPermissionsConsentRequest",
+                        "@version": "1",
+                        "permissionScope": "alexa::devices:all:geolocation:read",
+                    },
+                )
+
                 return (
                     handler_input.response_builder.speak(
                         "Prayer Times needs your location. Please enable location sharing in your Alexa app."
                     )
-                    .add_directive(
-                        {
-                            "type": "Connections.SendRequest",
-                            "name": "AskFor",
-                            "payload": {
-                                "@type": "AskForPermissionsConsentRequest",
-                                "@version": "1",
-                                "permissionScope": "alexa::devices:all:geolocation:read",
-                            },
-                        }
-                    )
+                    .add_directive(directive)
                     .set_should_end_session(True)
                     .response
                 )
