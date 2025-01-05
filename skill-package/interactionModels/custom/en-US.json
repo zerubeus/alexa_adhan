@@ -5,19 +5,19 @@
       "intents": [
         {
           "name": "AMAZON.CancelIntent",
-          "samples": []
+          "samples": ["cancel", "stop", "exit"]
         },
         {
           "name": "AMAZON.HelpIntent",
-          "samples": []
+          "samples": ["help", "instructions", "how to use"]
         },
         {
           "name": "AMAZON.StopIntent",
-          "samples": []
+          "samples": ["stop", "exit"]
         },
         {
           "name": "AMAZON.NavigateHomeIntent",
-          "samples": []
+          "samples": ["home", "back"]
         },
         {
           "name": "AMAZON.FallbackIntent",

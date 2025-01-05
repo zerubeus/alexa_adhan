@@ -77,9 +77,13 @@ class GetPrayerTimesIntentHandler(AbstractRequestHandler):
     def handle(self, handler_input):
         try:
             system = handler_input.request_envelope.context.system
+            logger.info(f"System context: {system}")
+
             geo_supported = hasattr(system.device.supported_interfaces, "geolocation")
+            logger.info(f"Geolocation supported: {geo_supported}")
 
             if not geo_supported:
+                logger.warning("Device doesn't support geolocation")
                 return (
                     handler_input.response_builder.speak(
                         "This device doesn't support location features."
@@ -89,17 +93,23 @@ class GetPrayerTimesIntentHandler(AbstractRequestHandler):
                 )
 
             permissions = system.user.permissions
-            if permissions and permissions.scopes.get(
-                "alexa::devices:all:geolocation:read"
-            ):
-                permission_granted = (
-                    permissions.scopes["alexa::devices:all:geolocation:read"].status
-                    == "GRANTED"
-                )
+            logger.info(f"User permissions: {permissions}")
+
+            if permissions and permissions.scopes:
+                logger.info(f"Permission scopes: {permissions.scopes}")
+                permission_status = permissions.scopes.get(
+                    "alexa::devices:all:geolocation:read", {}
+                ).get("status")
+                logger.info(f"Geolocation permission status: {permission_status}")
+                permission_granted = permission_status == "GRANTED"
             else:
+                logger.warning("No permissions found in request")
                 permission_granted = False
 
+            logger.info(f"Permission granted: {permission_granted}")
+
             if not permission_granted:
+                logger.info("Requesting geolocation permission")
                 directive = SendRequestDirective(
                     name="AskFor",
                     payload={
@@ -119,8 +129,10 @@ class GetPrayerTimesIntentHandler(AbstractRequestHandler):
                 )
 
             geolocation = handler_input.request_envelope.context.geolocation
+            logger.info(f"Geolocation data: {geolocation}")
 
             if not geolocation or not geolocation.coordinate:
+                logger.warning("No geolocation coordinates found")
                 return (
                     handler_input.response_builder.speak(
                         "I couldn't get your location. Please try again."
@@ -131,6 +143,9 @@ class GetPrayerTimesIntentHandler(AbstractRequestHandler):
 
             latitude = geolocation.coordinate.latitude_in_degrees
             longitude = geolocation.coordinate.longitude_in_degrees
+            logger.info(
+                f"Coordinates retrieved - Latitude: {latitude}, Longitude: {longitude}"
+            )
 
             prayer_times = PrayerService.get_prayer_times(latitude, longitude)
             formatted_times = PrayerService.format_prayer_times(prayer_times)
@@ -150,8 +165,7 @@ class GetPrayerTimesIntentHandler(AbstractRequestHandler):
             )
 
         except Exception as e:
-            logger.exception(f"Error trying to get prayer times: {e}")
-
+            logger.exception(f"Error in GetPrayerTimesIntentHandler: {e}")
             return (
                 handler_input.response_builder.speak(
                     "Sorry, I couldn't fetch the prayer times at the moment."
@@ -167,9 +181,16 @@ class ConnectionsResponseHandler(AbstractRequestHandler):
 
     def handle(self, handler_input):
         response = handler_input.request_envelope.request
+        logger.info(f"Connections.Response received: {response}")
+        logger.info(f"Response status code: {response.status.code}")
+
         if response.status.code == "200":
+            logger.info("Permission granted, proceeding to get prayer times")
             return GetPrayerTimesIntentHandler().handle(handler_input)
         else:
+            logger.warning(
+                f"Permission not granted. Status code: {response.status.code}"
+            )
             return (
                 handler_input.response_builder.speak(
                     "I still need location access to provide prayer times. Please enable it in the Alexa app."
