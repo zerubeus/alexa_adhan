@@ -187,11 +187,77 @@ class SessionEndedRequestHandler(AbstractRequestHandler):
         return handler_input.response_builder.response
 
 
+class HelpIntentHandler(AbstractRequestHandler):
+    def can_handle(self, handler_input):
+        return is_intent_name("AMAZON.HelpIntent")(handler_input)
+
+    def handle(self, handler_input):
+        speech_text = "You can ask me for prayer times or set up prayer notifications. What would you like to do?"
+
+        return (
+            handler_input.response_builder.speak(speech_text)
+            .set_card(SimpleCard("Help", speech_text))
+            .set_should_end_session(False)
+            .response
+        )
+
+
+class CancelAndStopIntentHandler(AbstractRequestHandler):
+    def can_handle(self, handler_input):
+        return is_intent_name("AMAZON.CancelIntent")(handler_input) or is_intent_name(
+            "AMAZON.StopIntent"
+        )(handler_input)
+
+    def handle(self, handler_input):
+        speech_text = "Goodbye!"
+
+        return (
+            handler_input.response_builder.speak(speech_text)
+            .set_card(SimpleCard("Goodbye", speech_text))
+            .set_should_end_session(True)
+            .response
+        )
+
+
+class FallbackIntentHandler(AbstractRequestHandler):
+    def can_handle(self, handler_input):
+        return is_intent_name("AMAZON.FallbackIntent")(handler_input)
+
+    def handle(self, handler_input):
+        speech_text = "I'm not sure what you want to do. You can ask me for prayer times or set up notifications."
+
+        return (
+            handler_input.response_builder.speak(speech_text)
+            .set_card(SimpleCard("I didn't understand", speech_text))
+            .set_should_end_session(False)
+            .response
+        )
+
+
+class EnableNotificationsIntentHandler(AbstractRequestHandler):
+    def can_handle(self, handler_input):
+        return is_intent_name("EnableNotificationsIntent")(handler_input)
+
+    def handle(self, handler_input):
+        speech_text = "Prayer notifications feature is coming soon!"
+
+        return (
+            handler_input.response_builder.speak(speech_text)
+            .set_card(SimpleCard("Notifications", speech_text))
+            .set_should_end_session(True)
+            .response
+        )
+
+
 sb.add_request_handler(ConnectionsResponseHandler())
 sb.add_request_handler(SessionEndedRequestHandler())
 sb.add_request_handler(LaunchRequestHandler())
 sb.add_request_handler(SetMuezzinIntentHandler())
 sb.add_request_handler(GetPrayerTimesIntentHandler())
+sb.add_request_handler(HelpIntentHandler())
+sb.add_request_handler(CancelAndStopIntentHandler())
+sb.add_request_handler(FallbackIntentHandler())
+sb.add_request_handler(EnableNotificationsIntentHandler())
 
 
 def lambda_handler(event, context):
