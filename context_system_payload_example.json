@@ -1,0 +1,35 @@
+{
+  "api_access_token": "",
+  "api_endpoint": "https://api.eu.amazonalexa.com",
+  "application": {
+    "application_id": ""
+  },
+  "device": {
+    "device_id": "",
+    "persistent_endpoint_id": "",
+    "supported_interfaces": {
+      "alexa_advertisement": "",
+      "alexa_presentation_apl": "",
+      "alexa_presentation_aplt": "",
+      "alexa_presentation_html": "",
+      "app_link": "",
+      "audio_player": "",
+      "display": "",
+      "geolocation": {},
+      "navigation": "",
+      "video_app": ""
+    }
+  },
+  "person": "",
+  "unit": "",
+  "user": {
+    "access_token": "",
+    "permissions": {
+      "consent_token": "",
+      "scopes": {
+        "alexa::devices:all:geolocation:read": { "status": "GRANTED" }
+      }
+    },
+    "user_id": ""
+  }
+}
