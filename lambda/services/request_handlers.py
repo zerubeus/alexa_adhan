@@ -3,13 +3,41 @@ import requests
 from typing import Optional
 from aws_lambda_powertools import Logger
 from ask_sdk_core.dispatch_components import AbstractRequestHandler
-from ask_sdk_model.interfaces.connections import SendRequestDirective
+from ask_sdk_core.dispatch_components import AbstractExceptionHandler
 from ask_sdk_core.utils import is_request_type, is_intent_name
-from ask_sdk_model.ui import SimpleCard
+from ask_sdk_model.ui import SimpleCard, AskForPermissionsConsentCard
+from ask_sdk_model.services import ServiceException
 from services.prayer_service import PrayerService
 
 
 logger = Logger()
+
+permissions = ["alexa::devices:all:geolocation:read"]
+
+WELCOME = (
+    "Welcome to Prayer Times. "
+    "You can ask me for prayer times or set up prayer notifications. "
+    "What would you like to do?"
+)
+
+WHAT_DO_YOU_WANT = "What would you like to do?"
+
+NOTIFY_MISSING_PERMISSIONS = (
+    "Prayer Times needs your location. "
+    "Please enable Location permissions in the Amazon Alexa app."
+)
+
+NO_LOCATION = (
+    "I couldn't get your location. "
+    "Please make sure location services are enabled in the Alexa app."
+)
+
+ERROR = "Sorry, I couldn't fetch the prayer times at the moment."
+
+LOCATION_FAILURE = (
+    "There was an error accessing your location. "
+    "Please try again or check your location settings in the Alexa app."
+)
 
 
 def get_city_name(lat: float, lon: float) -> Optional[str]:
@@ -27,18 +55,100 @@ def get_city_name(lat: float, lon: float) -> Optional[str]:
         return None
 
 
+class GetPrayerTimesIntentHandler(AbstractRequestHandler):
+    def can_handle(self, handler_input):
+        return is_intent_name("GetPrayerTimesIntent")(handler_input)
+
+    def handle(self, handler_input):
+        try:
+            req_envelope = handler_input.request_envelope
+            response_builder = handler_input.response_builder
+
+            if not (
+                req_envelope.context.system.user.permissions
+                and req_envelope.context.system.user.permissions.consent_token
+            ):
+                return (
+                    response_builder.speak(NOTIFY_MISSING_PERMISSIONS)
+                    .set_card(AskForPermissionsConsentCard(permissions=permissions))
+                    .response
+                )
+
+            try:
+                geolocation = req_envelope.context.geolocation
+                if not geolocation or not geolocation.coordinate:
+                    return response_builder.speak(NO_LOCATION).response
+
+                latitude = geolocation.coordinate.latitude_in_degrees
+                longitude = geolocation.coordinate.longitude_in_degrees
+
+                logger.info(
+                    f"Coordinates retrieved - Latitude: {latitude}, Longitude: {longitude}"
+                )
+
+                prayer_times = PrayerService.get_prayer_times(latitude, longitude)
+                formatted_times = PrayerService.format_prayer_times(prayer_times)
+
+                city_name = get_city_name(latitude, longitude)
+                location_text = f" in {city_name}" if city_name else ""
+
+                speech_text = (
+                    f"Here are today's prayer times{location_text}: {formatted_times}"
+                )
+
+                return (
+                    response_builder.speak(speech_text)
+                    .set_card(SimpleCard("Prayer Times", speech_text))
+                    .response
+                )
+
+            except ServiceException:
+                return response_builder.speak(LOCATION_FAILURE).response
+
+        except Exception as e:
+            logger.exception(f"Error in GetPrayerTimesIntentHandler: {e}")
+            return handler_input.response_builder.speak(ERROR).response
+
+
+class GetPrayerTimesExceptionHandler(AbstractExceptionHandler):
+    def can_handle(self, handler_input, exception):
+        return isinstance(exception, ServiceException)
+
+    def handle(self, handler_input, exception):
+        if exception.status_code == 403:
+            return (
+                handler_input.response_builder.speak(NOTIFY_MISSING_PERMISSIONS)
+                .set_card(AskForPermissionsConsentCard(permissions=permissions))
+                .response
+            )
+
+        return (
+            handler_input.response_builder.speak(LOCATION_FAILURE)
+            .ask(LOCATION_FAILURE)
+            .response
+        )
+
+
+class CatchAllExceptionHandler(AbstractExceptionHandler):
+    def can_handle(self, handler_input, exception):
+        return True
+
+    def handle(self, handler_input, exception):
+        logger.exception(f"Unexpected error: {exception}")
+        speech = "Sorry, something went wrong. Please try again!"
+        return handler_input.response_builder.speak(speech).ask(speech).response
+
+
 class LaunchRequestHandler(AbstractRequestHandler):
     def can_handle(self, handler_input):
         return is_request_type("LaunchRequest")(handler_input)
 
     def handle(self, handler_input):
-        speech_text = (
-            "Welcome to Prayer Times. You can ask me to set up prayer notifications."
-        )
 
         return (
-            handler_input.response_builder.speak(speech_text)
-            .set_card(SimpleCard("Prayer Times", speech_text))
+            handler_input.response_builder.speak(WELCOME)
+            .ask(WHAT_DO_YOU_WANT)
+            .set_card(SimpleCard("Prayer Times", WELCOME))
             .set_should_end_session(False)
             .response
         )
@@ -60,138 +170,13 @@ class SetMuezzinIntentHandler(AbstractRequestHandler):
         table.put_item(Item={"userId": user_id, "muezzin": muezzin})
 
         speech_text = f"I've set your athan voice to {muezzin}"
+
         return (
             handler_input.response_builder.speak(speech_text)
             .set_card(SimpleCard("Muezzin Set", speech_text))
             .set_should_end_session(True)
             .response
         )
-
-
-class GetPrayerTimesIntentHandler(AbstractRequestHandler):
-    def can_handle(self, handler_input):
-        return is_intent_name("GetPrayerTimesIntent")(handler_input)
-
-    def handle(self, handler_input):
-        try:
-            system = handler_input.request_envelope.context.system
-            logger.info(f"System context: {system}")
-
-            geo_supported = (
-                hasattr(system.device, "supported_interfaces")
-                and hasattr(system.device.supported_interfaces, "geolocation")
-                and system.device.supported_interfaces.geolocation is not None
-            )
-
-            logger.info(f"Geolocation supported: {geo_supported}")
-
-            if not geo_supported:
-                logger.warning("Device doesn't support geolocation")
-                return (
-                    handler_input.response_builder.speak(
-                        "This device doesn't support location features. Please try using the Alexa app or a device with location support."
-                    )
-                    .set_should_end_session(True)
-                    .response
-                )
-
-            permissions = system.user.permissions
-            logger.info(f"User permissions: {permissions}")
-
-            if permissions and hasattr(permissions, "scopes"):
-                logger.info(f"Permission scopes: {permissions.scopes}")
-
-                try:
-                    geolocation_permission = permissions.scopes.__getattribute__(
-                        "alexa::devices:all:geolocation:read"
-                    )
-
-                    logger.info(f"Geolocation permission: {geolocation_permission}")
-
-                    permission_granted = (
-                        geolocation_permission is not None
-                        and hasattr(geolocation_permission, "status")
-                        and geolocation_permission.status == "GRANTED"
-                    )
-
-                except AttributeError:
-                    logger.warning("Could not access geolocation permission")
-                    permission_granted = False
-
-                logger.info(f"Geolocation permission status: {permission_granted}")
-            else:
-                logger.warning("No permissions found in request")
-                permission_granted = False
-
-            logger.info(f"Permission granted: {permission_granted}")
-
-            if not permission_granted:
-                logger.info("Requesting geolocation permission")
-
-                return (
-                    handler_input.response_builder.speak(
-                        "Prayer Times needs your location. Please enable location sharing in your Alexa app settings, then try again."
-                    )
-                    .add_directive(
-                        SendRequestDirective(
-                            name="AskFor",
-                            payload={
-                                "@type": "AskForPermissionsConsentRequest",
-                                "@version": "1",
-                                "permissionScope": "alexa::devices:all:geolocation:read",
-                            },
-                        )
-                    )
-                    .set_should_end_session(True)
-                    .response
-                )
-
-            geolocation = handler_input.request_envelope.context.geolocation
-            logger.info(f"Geolocation data: {geolocation}")
-
-            if not geolocation or not geolocation.coordinate:
-                logger.warning("No geolocation coordinates found")
-                return (
-                    handler_input.response_builder.speak(
-                        "I couldn't get your location. Please try again."
-                    )
-                    .set_should_end_session(True)
-                    .response
-                )
-
-            latitude = geolocation.coordinate.latitude_in_degrees
-            longitude = geolocation.coordinate.longitude_in_degrees
-
-            logger.info(
-                f"Coordinates retrieved - Latitude: {latitude}, Longitude: {longitude}"
-            )
-
-            prayer_times = PrayerService.get_prayer_times(latitude, longitude)
-            formatted_times = PrayerService.format_prayer_times(prayer_times)
-
-            city_name = get_city_name(latitude, longitude)
-            location_text = f" in {city_name}" if city_name else ""
-
-            speech_text = (
-                f"Here are today's prayer times{location_text}: {formatted_times}"
-            )
-
-            return (
-                handler_input.response_builder.speak(speech_text)
-                .set_card(SimpleCard("Prayer Times", speech_text))
-                .set_should_end_session(True)
-                .response
-            )
-
-        except Exception as e:
-            logger.exception(f"Error in GetPrayerTimesIntentHandler: {e}")
-            return (
-                handler_input.response_builder.speak(
-                    "Sorry, I couldn't fetch the prayer times at the moment."
-                )
-                .set_should_end_session(True)
-                .response
-            )
 
 
 class ConnectionsResponseHandler(AbstractRequestHandler):

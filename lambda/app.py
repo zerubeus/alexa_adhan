@@ -1,19 +1,22 @@
-from ask_sdk_core.skill_builder import SkillBuilder
+from ask_sdk_core.skill_builder import CustomSkillBuilder
+from ask_sdk_core.api_client import DefaultApiClient
 
-from services.request_handlers import SetMuezzinIntentHandler
-from services.request_handlers import LaunchRequestHandler
-from services.request_handlers import SessionEndedRequestHandler
-from services.request_handlers import ConnectionsResponseHandler
-from services.request_handlers import GetPrayerTimesIntentHandler
-from services.request_handlers import HelpIntentHandler
-from services.request_handlers import CancelAndStopIntentHandler
-from services.request_handlers import FallbackIntentHandler
-from services.request_handlers import EnableNotificationsIntentHandler
+from services.request_handlers import (
+    SetMuezzinIntentHandler,
+    LaunchRequestHandler,
+    SessionEndedRequestHandler,
+    GetPrayerTimesIntentHandler,
+    HelpIntentHandler,
+    CancelAndStopIntentHandler,
+    FallbackIntentHandler,
+    EnableNotificationsIntentHandler,
+    GetPrayerTimesExceptionHandler,
+    CatchAllExceptionHandler,
+)
 
-sb = SkillBuilder()
+sb = CustomSkillBuilder(api_client=DefaultApiClient())
 
-
-sb.add_request_handler(ConnectionsResponseHandler())
+# Add request handlers
 sb.add_request_handler(SessionEndedRequestHandler())
 sb.add_request_handler(LaunchRequestHandler())
 sb.add_request_handler(SetMuezzinIntentHandler())
@@ -22,6 +25,10 @@ sb.add_request_handler(HelpIntentHandler())
 sb.add_request_handler(CancelAndStopIntentHandler())
 sb.add_request_handler(FallbackIntentHandler())
 sb.add_request_handler(EnableNotificationsIntentHandler())
+
+# Add exception handlers
+sb.add_exception_handler(GetPrayerTimesExceptionHandler())
+sb.add_exception_handler(CatchAllExceptionHandler())
 
 
 def lambda_handler(event, context):
