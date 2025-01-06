@@ -13,7 +13,7 @@ build-lambda:
 
 deploy-lambda:
 	$(eval SKILL_ID := $(shell jq -r '.profiles.default.skillId' .ask/ask-states.json))
-	sam deploy --parameter-overrides SkillId=$(SKILL_ID)
+	sam deploy --parameter-overrides SkillId=$(SKILL_ID) --no-fail-on-empty-changeset
 
 deploy-skill:
 	@echo "Getting Lambda function ARN..."
@@ -42,6 +42,6 @@ upload-media:
 		--region eu-west-1 \
 		--profile zerbania))
 	@echo "Found S3 bucket: $(BUCKET_NAME)"
-	aws s3 sync ./media s3://$(BUCKET_NAME) --delete
+	aws s3 sync ./media s3://$(BUCKET_NAME) --delete --profile zerbania
 
 deploy: build-lambda deploy-lambda upload-media deploy-skill
