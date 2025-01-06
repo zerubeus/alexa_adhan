@@ -63,6 +63,21 @@ def get_city_name(lat: float, lon: float) -> Optional[str]:
         return None
 
 
+class LaunchRequestHandler(AbstractRequestHandler):
+    def can_handle(self, handler_input):
+        return is_request_type("LaunchRequest")(handler_input)
+
+    def handle(self, handler_input):
+
+        return (
+            handler_input.response_builder.speak(WELCOME)
+            .ask(WHAT_DO_YOU_WANT)
+            .set_card(SimpleCard("Prayer Times", WELCOME))
+            .set_should_end_session(False)
+            .response
+        )
+
+
 class GetPrayerTimesIntentHandler(AbstractRequestHandler):
     def can_handle(self, handler_input):
         return is_intent_name("GetPrayerTimesIntent")(handler_input)
@@ -145,21 +160,6 @@ class CatchAllExceptionHandler(AbstractExceptionHandler):
         logger.exception(f"Unexpected error: {exception}")
         speech = "Sorry, something went wrong. Please try again!"
         return handler_input.response_builder.speak(speech).ask(speech).response
-
-
-class LaunchRequestHandler(AbstractRequestHandler):
-    def can_handle(self, handler_input):
-        return is_request_type("LaunchRequest")(handler_input)
-
-    def handle(self, handler_input):
-
-        return (
-            handler_input.response_builder.speak(WELCOME)
-            .ask(WHAT_DO_YOU_WANT)
-            .set_card(SimpleCard("Prayer Times", WELCOME))
-            .set_should_end_session(False)
-            .response
-        )
 
 
 class SetMuezzinIntentHandler(AbstractRequestHandler):
