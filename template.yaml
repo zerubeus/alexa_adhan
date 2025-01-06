@@ -22,6 +22,7 @@ Resources:
         Variables:
           POWERTOOLS_SERVICE_NAME: prayer-times-service
           POWERTOOLS_LOG_LEVEL: INFO
+          ATHAN_BUCKET_URL: !Sub "https://${AthanAudioBucket.DomainName}"
       Layers:
         - !Ref PrayerTimesFunctionLayers
       Policies:
@@ -60,3 +61,8 @@ Resources:
 
   AthanAudioBucket:
     Type: AWS::S3::Bucket
+
+Outputs:
+  AthanAudioBucketUrl:
+    Description: URL of the AthanAudioBucket
+    Value: !Sub "https://${AthanAudioBucket.DomainName}"
