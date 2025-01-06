@@ -32,49 +32,8 @@
           ]
         },
         {
-          "name": "SetMuezzinIntent",
-          "slots": [
-            {
-              "name": "muezzin",
-              "type": "MUEZZIN_LIST"
-            }
-          ],
-          "samples": [
-            "set muezzin to {muezzin}",
-            "change athan voice to {muezzin}"
-          ]
-        },
-        {
           "name": "EnableNotificationsIntent",
           "samples": ["enable prayer notifications", "turn on athan"]
-        }
-      ],
-      "types": [
-        {
-          "name": "MUEZZIN_LIST",
-          "values": [
-            {
-              "id": "abdul_basit",
-              "name": {
-                "value": "Abdul Basit",
-                "synonyms": []
-              }
-            },
-            {
-              "id": "ali_mulla",
-              "name": {
-                "value": "Ali Mulla",
-                "synonyms": []
-              }
-            },
-            {
-              "id": "mishary_rashid",
-              "name": {
-                "value": "Mishary Rashid",
-                "synonyms": []
-              }
-            }
-          ]
         }
       ]
     }

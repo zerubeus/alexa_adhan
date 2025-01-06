@@ -1,4 +1,4 @@
-.PHONY: create-skill build-lambda deploy-lambda deploy-skill deploy aws-login
+.PHONY: create-skill build-lambda deploy-lambda deploy-skill deploy aws-login upload-media
 
 aws-login:
 	aws sso login --profile zerbania
@@ -33,4 +33,15 @@ deploy-skill:
 
 	ask deploy
 
-deploy: build-lambda deploy-lambda deploy-skill
+upload-media:
+	@echo "Getting S3 bucket name…"
+	$(eval BUCKET_NAME := $(shell aws cloudformation describe-stack-resources \
+		--stack-name zerubeus-alexa-adhan \
+		--query "StackResources[?LogicalResourceId=='AthanAudioBucket'].PhysicalResourceId" \
+		--output text \
+		--region eu-west-1 \
+		--profile zerbania))
+	@echo "Found S3 bucket: $(BUCKET_NAME)"
+	aws s3 sync ./media s3://$(BUCKET_NAME) --delete
+
+deploy: build-lambda deploy-lambda upload-media deploy-skill

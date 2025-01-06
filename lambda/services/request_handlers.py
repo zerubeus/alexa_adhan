@@ -1,4 +1,3 @@
-import boto3
 import requests
 from typing import Optional
 from aws_lambda_powertools import Logger
@@ -160,31 +159,6 @@ class CatchAllExceptionHandler(AbstractExceptionHandler):
         logger.exception(f"Unexpected error: {exception}")
         speech = "Sorry, something went wrong. Please try again!"
         return handler_input.response_builder.speak(speech).ask(speech).response
-
-
-class SetMuezzinIntentHandler(AbstractRequestHandler):
-    def can_handle(self, handler_input):
-        return is_intent_name("SetMuezzinIntent")(handler_input)
-
-    def handle(self, handler_input):
-        slots = handler_input.request_envelope.request.intent.slots
-        muezzin = slots["muezzin"].value
-
-        dynamodb = boto3.resource("dynamodb")
-        table = dynamodb.Table("PreferencesTable")
-
-        user_id = handler_input.request_envelope.session.user.user_id
-
-        table.put_item(Item={"userId": user_id, "muezzin": muezzin})
-
-        speech_text = f"I've set your athan voice to {muezzin}"
-
-        return (
-            handler_input.response_builder.speak(speech_text)
-            .set_card(SimpleCard("Muezzin Set", speech_text))
-            .set_should_end_session(True)
-            .response
-        )
 
 
 class ConnectionsResponseHandler(AbstractRequestHandler):
