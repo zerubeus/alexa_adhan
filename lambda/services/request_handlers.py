@@ -39,6 +39,14 @@ LOCATION_FAILURE = (
     "Please try again or check your location settings in the Alexa app."
 )
 
+HELP_TEXT = (
+    "You can ask me for prayer times or set up prayer notifications. "
+    "For example, try saying: what are the prayer times?"
+)
+
+
+FALL_BACK_TEXT = "I'm not sure what you want to do. You can ask me for prayer times or set up notifications."
+
 
 def get_city_name(lat: float, lon: float) -> Optional[str]:
     try:
@@ -197,9 +205,7 @@ class ConnectionsResponseHandler(AbstractRequestHandler):
                 f"Permission not granted. Status code: {response.status.code}"
             )
             return (
-                handler_input.response_builder.speak(
-                    "I still need location access to provide prayer times. Please enable it in the Alexa app."
-                )
+                handler_input.response_builder.speak(NOTIFY_MISSING_PERMISSIONS)
                 .set_should_end_session(True)
                 .response
             )
@@ -218,11 +224,9 @@ class HelpIntentHandler(AbstractRequestHandler):
         return is_intent_name("AMAZON.HelpIntent")(handler_input)
 
     def handle(self, handler_input):
-        speech_text = "You can ask me for prayer times or set up prayer notifications. What would you like to do?"
-
         return (
-            handler_input.response_builder.speak(speech_text)
-            .set_card(SimpleCard("Help", speech_text))
+            handler_input.response_builder.speak(HELP_TEXT)
+            .set_card(SimpleCard("Help", HELP_TEXT))
             .set_should_end_session(False)
             .response
         )
@@ -250,11 +254,9 @@ class FallbackIntentHandler(AbstractRequestHandler):
         return is_intent_name("AMAZON.FallbackIntent")(handler_input)
 
     def handle(self, handler_input):
-        speech_text = "I'm not sure what you want to do. You can ask me for prayer times or set up notifications."
-
         return (
-            handler_input.response_builder.speak(speech_text)
-            .set_card(SimpleCard("I didn't understand", speech_text))
+            handler_input.response_builder.speak(FALL_BACK_TEXT)
+            .set_card(SimpleCard("I didn't understand", FALL_BACK_TEXT))
             .set_should_end_session(False)
             .response
         )
