@@ -1,34 +1,11 @@
-WELCOME = (
-    "Bienvenue sur Prayer Times."
-    "Vous pouvez demander les prières ou configurer des notifications de prières."
-    "Que voulez-vous faire?"
-)
-
-WHAT_DO_YOU_WANT = "Que voulez-vous faire?"
-
-NOTIFY_MISSING_PERMISSIONS = (
-    "Prayer Times nécessite votre localisation."
-    "Veuillez activer les permissions de localisation dans l'application Amazon Alexa."
-)
-
-NO_LOCATION = (
-    "Je n'ai pas pu obtenir votre localisation. "
-    "Veuillez vérifier que les services de localisation sont activés dans l'application Alexa."
-)
-
-ERROR = "Désolé, je ne peux pas récupérer les prières en ce moment."
-
-LOCATION_FAILURE = (
-    "Il y a eu une erreur lors de l'accès à votre localisation. "
-    "Veuillez réessayer ou vérifier les paramètres de localisation dans l'application Alexa."
-)
-
-HELP_TEXT = (
-    "Vous pouvez demander les prières ou configurer des notifications de prières. "
-    "Par exemple, dites: quelles sont les prières?"
-)
-
-
-FALL_BACK_TEXT = "Je ne sais pas ce que vous voulez faire. Vous pouvez demander les prières ou configurer des notifications."
-
-NOTIFICATION_SETUP_TEXT = "J'ai configuré les notifications de prières quotidiennes pour vous. Vous recevrez une notification à chaque heure de prière."
+class SpeechText:
+    WELCOME = "Bienvenue dans Heures de Prière!"
+    WHAT_DO_YOU_WANT = "Que puis-je faire pour vous?"
+    NOTIFY_MISSING_PERMISSIONS = "Pour utiliser cette fonctionnalité, vous devez autoriser l'accès à votre localisation dans l'application Alexa."
+    NO_LOCATION = "Je n'ai pas pu obtenir votre localisation. Veuillez vérifier vos paramètres de localisation dans l'application Alexa."
+    ERROR = "Désolé, une erreur s'est produite. Veuillez réessayer!"
+    LOCATION_FAILURE = "Je n'ai pas pu obtenir votre localisation. Veuillez vérifier vos paramètres de localisation et réessayer."
+    HELP_TEXT = "Vous pouvez me demander les heures de prière ou configurer des notifications de prière. Par exemple, essayez de dire : quelles sont les heures de prière?"
+    FALL_BACK_TEXT = "Désolé, je n'ai pas compris. Veuillez réessayer."
+    NOTIFICATION_SETUP_TEXT = "J'ai configuré les notifications pour les heures de prière. Vous recevrez une notification avant chaque prière."
+    GOODBYE = "Au revoir!"

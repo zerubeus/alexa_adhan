@@ -11,13 +11,22 @@
             "Alexa, ask prayer times to set muezzin",
             "Alexa, ask prayer times to enable notifications"
           ],
-          "keywords": [
-            "prayer",
-            "athan",
-            "muslim"
-          ],
+          "keywords": ["prayer", "athan", "muslim"],
           "smallIconUri": "file://assets/en-US_smallIcon.png",
           "largeIconUri": "file://assets/en-US_largeIcon.png"
+        },
+        "fr-FR": {
+          "name": "Heures de Prière (Athan)",
+          "summary": "Horaires de prière musulmane et notifications d'athan",
+          "description": "Obtenez les horaires de prière et les notifications d'athan",
+          "examplePhrases": [
+            "Alexa, demande à heures de prière les horaires d'aujourd'hui",
+            "Alexa, demande à heures de prière d'activer les notifications",
+            "Alexa, ouvre heures de prière"
+          ],
+          "keywords": ["prière", "athan", "musulman", "islam"],
+          "smallIconUri": "file://assets/fr-FR_smallIcon.png",
+          "largeIconUri": "file://assets/fr-FR_largeIcon.png"
         }
       },
       "isAvailableWorldwide": true,

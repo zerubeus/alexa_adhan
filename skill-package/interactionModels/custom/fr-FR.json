@@ -1,0 +1,46 @@
+{
+  "interactionModel": {
+    "languageModel": {
+      "invocationName": "heures de prière",
+      "intents": [
+        {
+          "name": "AMAZON.CancelIntent",
+          "samples": ["annuler", "arrêter", "quitter"]
+        },
+        {
+          "name": "AMAZON.HelpIntent",
+          "samples": ["aide", "instructions", "comment utiliser"]
+        },
+        {
+          "name": "AMAZON.StopIntent",
+          "samples": ["stop", "arrêter"]
+        },
+        {
+          "name": "AMAZON.NavigateHomeIntent",
+          "samples": ["accueil", "retour"]
+        },
+        {
+          "name": "AMAZON.FallbackIntent",
+          "samples": []
+        },
+        {
+          "name": "GetPrayerTimesIntent",
+          "samples": [
+            "quelles sont les heures de prière",
+            "donne moi les heures de prière",
+            "quand sont les prières aujourd'hui",
+            "horaires des prières"
+          ]
+        },
+        {
+          "name": "EnableNotificationsIntent",
+          "samples": [
+            "activer les notifications de prière",
+            "activer l'athan",
+            "active les notifications"
+          ]
+        }
+      ]
+    }
+  }
+}
