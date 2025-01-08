@@ -5,11 +5,7 @@ from ask_sdk_model.services import ServiceException
 from ask_sdk_model.ui import AskForPermissionsConsentCard
 from aws_lambda_powertools import Logger
 from auth.auth_permissions import permissions
-from speech_text.en_speech_text import (
-    LOCATION_FAILURE,
-    NO_LOCATION,
-    NOTIFY_MISSING_PERMISSIONS,
-)
+from speech_text.en_speech_text import SpeechText
 
 logger = Logger()
 
@@ -35,7 +31,7 @@ def get_device_location(req_envelope, response_builder) -> dict:
         and req_envelope.context.system.user.permissions.consent_token
     ):
         return (
-            response_builder.speak(NOTIFY_MISSING_PERMISSIONS)
+            response_builder.speak(SpeechText.NOTIFY_MISSING_PERMISSIONS)
             .set_card(AskForPermissionsConsentCard(permissions=permissions))
             .response
         )
@@ -43,7 +39,7 @@ def get_device_location(req_envelope, response_builder) -> dict:
     try:
         geolocation = req_envelope.context.geolocation
         if not geolocation or not geolocation.coordinate:
-            return response_builder.speak(NO_LOCATION).response
+            return response_builder.speak(SpeechText.NO_LOCATION).response
 
         latitude = geolocation.coordinate.latitude_in_degrees
         longitude = geolocation.coordinate.longitude_in_degrees
@@ -55,4 +51,4 @@ def get_device_location(req_envelope, response_builder) -> dict:
         return latitude, longitude
 
     except ServiceException:
-        return response_builder.speak(LOCATION_FAILURE).response
+        return response_builder.speak(SpeechText.LOCATION_FAILURE).response
