@@ -5,10 +5,12 @@ import pytz
 from typing import List
 from ask_sdk_model.services.reminder_management import (
     Reminder,
-    TriggerAbsolute,
+    Trigger,
     AlertInfo,
     SpokenInfo,
     PushNotification,
+    RecurrenceFreq,
+    Recurrence,
 )
 from ask_sdk_model.interfaces.audioplayer import (
     PlayDirective,
@@ -73,11 +75,17 @@ class PrayerService:
                 if reminder_time < datetime.datetime.now(user_timezone):
                     reminder_time += datetime.timedelta(days=1)
 
-                reminder_request = Reminder(
-                    trigger=TriggerAbsolute(
-                        scheduled_time=reminder_time.isoformat(),
-                        recurrence={"freq": "DAILY"},
+                trigger = Trigger(
+                    type="SCHEDULED_ABSOLUTE",
+                    scheduled_time=reminder_time.isoformat(),
+                    recurrence=Recurrence(
+                        freq=RecurrenceFreq.DAILY,
                     ),
+                )
+
+                reminder_request = Reminder(
+                    request_time=datetime.datetime.now(user_timezone).isoformat(),
+                    trigger=trigger,
                     alert_info=AlertInfo(
                         spoken_info=SpokenInfo(content=[f"Time for {prayer} prayer"])
                     ),
