@@ -11,11 +11,7 @@
             "Alexa, ask prayer times to set muezzin",
             "Alexa, ask prayer times to enable notifications"
           ],
-          "keywords": [
-            "prayer",
-            "athan",
-            "muslim"
-          ],
+          "keywords": ["prayer", "athan", "muslim"],
           "smallIconUri": "file://assets/en-US_smallIcon.png",
           "largeIconUri": "file://assets/en-US_largeIcon.png"
         },
@@ -28,12 +24,7 @@
             "Alexa, demande à heures de prière d'activer les notifications",
             "Alexa, ouvre heures de prière"
           ],
-          "keywords": [
-            "prière",
-            "athan",
-            "musulman",
-            "islam"
-          ],
+          "keywords": ["prière", "athan", "musulman", "islam"],
           "smallIconUri": "file://assets/fr-FR_smallIcon.png",
           "largeIconUri": "file://assets/fr-FR_largeIcon.png"
         }
@@ -56,7 +47,7 @@
         "name": "alexa::profile:name:read"
       },
       {
-        "name": "alexa:devices:all:address:country_and_postal_code:read"
+        "name": "alexa::devices:all:address:full:read"
       }
     ],
     "manifestVersion": "1.0"
