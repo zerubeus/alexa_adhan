@@ -5,7 +5,7 @@ from ask_sdk_model.services import ServiceException
 from ask_sdk_model.ui import AskForPermissionsConsentCard
 from aws_lambda_powertools import Logger
 from auth.auth_permissions import permissions
-from speech_text.en_speech_text import SpeechText
+from speech_text import get_speech_text
 
 logger = Logger()
 
@@ -26,13 +26,16 @@ def get_city_name(lat: float, lon: float) -> Optional[str]:
 
 
 def get_device_location(req_envelope, response_builder) -> tuple:
+    locale = req_envelope.request.locale
+    texts = get_speech_text(locale)
+
     if not (
         req_envelope.context.system.user.permissions
         and req_envelope.context.system.user.permissions.consent_token
     ):
         return (
             False,
-            response_builder.speak(SpeechText.NOTIFY_MISSING_PERMISSIONS)
+            response_builder.speak(texts.NOTIFY_MISSING_PERMISSIONS)
             .set_card(AskForPermissionsConsentCard(permissions=permissions))
             .response,
         )
@@ -40,7 +43,7 @@ def get_device_location(req_envelope, response_builder) -> tuple:
     try:
         geolocation = req_envelope.context.geolocation
         if not geolocation or not geolocation.coordinate:
-            return (False, response_builder.speak(SpeechText.NO_LOCATION).response)
+            return (False, response_builder.speak(texts.NO_LOCATION).response)
 
         latitude = geolocation.coordinate.latitude_in_degrees
         longitude = geolocation.coordinate.longitude_in_degrees
@@ -52,4 +55,4 @@ def get_device_location(req_envelope, response_builder) -> tuple:
         return (True, (latitude, longitude))
 
     except ServiceException:
-        return (False, response_builder.speak(SpeechText.LOCATION_FAILURE).response)
+        return (False, response_builder.speak(texts.LOCATION_FAILURE).response)
