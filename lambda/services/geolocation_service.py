@@ -4,7 +4,6 @@ import requests
 from ask_sdk_model.services import ServiceException
 from ask_sdk_model.ui import AskForPermissionsConsentCard
 from aws_lambda_powertools import Logger
-from auth.auth_permissions import permissions
 from speech_text import get_speech_text
 
 logger = Logger()
@@ -67,6 +66,7 @@ def get_device_location(
     locale = req_envelope.request.locale
     texts = get_speech_text(locale)
 
+    # Check if device supports geolocation
     supports_geolocation = (
         hasattr(req_envelope.context.system.device.supported_interfaces, "geolocation")
         and req_envelope.context.system.device.supported_interfaces.geolocation
@@ -81,6 +81,7 @@ def get_device_location(
     )
 
     if supports_geolocation:
+        # Mobile device flow
         has_permissions = bool(req_envelope.context.system.user.permissions)
         has_consent = bool(
             req_envelope.context.system.user.permissions
@@ -106,7 +107,11 @@ def get_device_location(
             return (
                 False,
                 response_builder.speak(texts.NOTIFY_MISSING_PERMISSIONS)
-                .set_card(AskForPermissionsConsentCard(permissions=permissions))
+                .set_card(
+                    AskForPermissionsConsentCard(
+                        permissions=["alexa::devices:all:geolocation:read"]
+                    )
+                )
                 .response,
             )
 
@@ -164,9 +169,44 @@ def get_device_location(
             )
             return (False, response_builder.speak(texts.LOCATION_FAILURE).response)
     else:
+        # Stationary device flow - use Device Settings API
         if not service_client_factory:
             logger.warning("Service client factory not provided for stationary device")
             return (False, response_builder.speak(texts.LOCATION_FAILURE).response)
+
+        # Check for address permission
+        has_permissions = bool(req_envelope.context.system.user.permissions)
+        has_consent = bool(
+            req_envelope.context.system.user.permissions
+            and req_envelope.context.system.user.permissions.consent_token
+        )
+
+        logger.info(
+            "Checking address permissions",
+            extra={
+                "has_permissions": has_permissions,
+                "has_consent_token": has_consent,
+            },
+        )
+
+        if not (has_permissions and has_consent):
+            logger.warning(
+                "Missing address permissions or consent token",
+                extra={
+                    "has_permissions": has_permissions,
+                    "has_consent_token": has_consent,
+                },
+            )
+            return (
+                False,
+                response_builder.speak(texts.NOTIFY_MISSING_PERMISSIONS)
+                .set_card(
+                    AskForPermissionsConsentCard(
+                        permissions=["alexa::devices:all:address:full:read"]
+                    )
+                )
+                .response,
+            )
 
         try:
             device_id = req_envelope.context.system.device.device_id
@@ -190,6 +230,7 @@ def get_device_location(
                 },
             )
 
+            # Convert address to coordinates
             address_parts = {
                 "addressLine1": addr.addressLine1,
                 "city": addr.city,
