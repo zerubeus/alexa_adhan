@@ -52,13 +52,21 @@ class GetPrayerTimesIntentHandler(AbstractRequestHandler):
             req_envelope = handler_input.request_envelope
             response_builder = handler_input.response_builder
 
-            # Check if we can use the service client factory
+            # Check if we have the permissions
             if not (
-                handler_input.service_client_factory
-                and handler_input.service_client_factory.can_use_device_address_service()
+                req_envelope.context.system.user.permissions
+                and req_envelope.context.system.user.permissions.consent_token
             ):
-                logger.warning("Device address service not available")
-                return response_builder.speak(texts.NOTIFY_MISSING_PERMISSIONS).response
+                logger.warning("Missing permissions for device address")
+                return (
+                    response_builder.speak(texts.NOTIFY_MISSING_PERMISSIONS)
+                    .set_card(
+                        AskForPermissionsConsentCard(
+                            permissions=["alexa::devices:all:address:full:read"]
+                        )
+                    )
+                    .response
+                )
 
             success, location_result = get_device_location(
                 req_envelope, response_builder, handler_input.service_client_factory
@@ -123,13 +131,21 @@ class EnableNotificationsIntentHandler(AbstractRequestHandler):
             req_envelope = handler_input.request_envelope
             response_builder = handler_input.response_builder
 
-            # Check if we can use the service client factory
+            # Check if we have the permissions
             if not (
-                handler_input.service_client_factory
-                and handler_input.service_client_factory.can_use_device_address_service()
+                req_envelope.context.system.user.permissions
+                and req_envelope.context.system.user.permissions.consent_token
             ):
-                logger.warning("Device address service not available")
-                return response_builder.speak(texts.NOTIFY_MISSING_PERMISSIONS).response
+                logger.warning("Missing permissions for device address")
+                return (
+                    response_builder.speak(texts.NOTIFY_MISSING_PERMISSIONS)
+                    .set_card(
+                        AskForPermissionsConsentCard(
+                            permissions=["alexa::devices:all:address:full:read"]
+                        )
+                    )
+                    .response
+                )
 
             success, location_result = get_device_location(
                 req_envelope, response_builder, handler_input.service_client_factory
