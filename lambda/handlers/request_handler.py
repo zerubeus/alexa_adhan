@@ -52,6 +52,14 @@ class GetPrayerTimesIntentHandler(AbstractRequestHandler):
             req_envelope = handler_input.request_envelope
             response_builder = handler_input.response_builder
 
+            # Check if we can use the service client factory
+            if not (
+                handler_input.service_client_factory
+                and handler_input.service_client_factory.can_use_device_address_service()
+            ):
+                logger.warning("Device address service not available")
+                return response_builder.speak(texts.NOTIFY_MISSING_PERMISSIONS).response
+
             success, location_result = get_device_location(
                 req_envelope, response_builder, handler_input.service_client_factory
             )
@@ -77,6 +85,27 @@ class GetPrayerTimesIntentHandler(AbstractRequestHandler):
                 .response
             )
 
+        except ServiceException as se:
+            logger.error(
+                "ServiceException in GetPrayerTimesIntentHandler",
+                extra={
+                    "error_type": type(se).__name__,
+                    "error_message": str(se),
+                    "status_code": getattr(se, "status_code", None),
+                },
+            )
+            if se.status_code == 403:
+                return (
+                    response_builder.speak(texts.NOTIFY_MISSING_PERMISSIONS)
+                    .set_card(
+                        AskForPermissionsConsentCard(
+                            permissions=["alexa::devices:all:address:full:read"]
+                        )
+                    )
+                    .response
+                )
+            return response_builder.speak(texts.LOCATION_FAILURE).response
+
         except Exception as e:
             logger.exception(f"Error in GetPrayerTimesIntentHandler: {e}")
             return handler_input.response_builder.speak(texts.ERROR).response
@@ -93,6 +122,14 @@ class EnableNotificationsIntentHandler(AbstractRequestHandler):
 
             req_envelope = handler_input.request_envelope
             response_builder = handler_input.response_builder
+
+            # Check if we can use the service client factory
+            if not (
+                handler_input.service_client_factory
+                and handler_input.service_client_factory.can_use_device_address_service()
+            ):
+                logger.warning("Device address service not available")
+                return response_builder.speak(texts.NOTIFY_MISSING_PERMISSIONS).response
 
             success, location_result = get_device_location(
                 req_envelope, response_builder, handler_input.service_client_factory
@@ -132,7 +169,25 @@ class EnableNotificationsIntentHandler(AbstractRequestHandler):
                 .response
             )
 
-        except ServiceException:
+        except ServiceException as se:
+            logger.error(
+                "ServiceException in EnableNotificationsIntentHandler",
+                extra={
+                    "error_type": type(se).__name__,
+                    "error_message": str(se),
+                    "status_code": getattr(se, "status_code", None),
+                },
+            )
+            if se.status_code == 403:
+                return (
+                    response_builder.speak(texts.NOTIFY_MISSING_PERMISSIONS)
+                    .set_card(
+                        AskForPermissionsConsentCard(
+                            permissions=["alexa::devices:all:address:full:read"]
+                        )
+                    )
+                    .response
+                )
             return response_builder.speak(texts.LOCATION_FAILURE).response
 
         except Exception as e:
