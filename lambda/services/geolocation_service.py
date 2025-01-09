@@ -174,29 +174,10 @@ def get_device_location(
             logger.warning("Service client factory not provided for stationary device")
             return (False, response_builder.speak(texts.LOCATION_FAILURE).response)
 
-        # Check for address permission
-        has_permissions = bool(req_envelope.context.system.user.permissions)
-        has_consent = bool(
-            req_envelope.context.system.user.permissions
-            and req_envelope.context.system.user.permissions.consent_token
-        )
-
-        logger.info(
-            "Checking address permissions",
-            extra={
-                "has_permissions": has_permissions,
-                "has_consent_token": has_consent,
-            },
-        )
-
-        if not (has_permissions and has_consent):
-            logger.warning(
-                "Missing address permissions or consent token",
-                extra={
-                    "has_permissions": has_permissions,
-                    "has_consent_token": has_consent,
-                },
-            )
+        # Check for API access token
+        api_access_token = req_envelope.context.system.api_access_token
+        if not api_access_token:
+            logger.warning("No API access token available")
             return (
                 False,
                 response_builder.speak(texts.NOTIFY_MISSING_PERMISSIONS)
@@ -260,6 +241,17 @@ def get_device_location(
                     "status_code": getattr(se, "status_code", None),
                 },
             )
+            if se.status_code == 403:
+                return (
+                    False,
+                    response_builder.speak(texts.NOTIFY_MISSING_PERMISSIONS)
+                    .set_card(
+                        AskForPermissionsConsentCard(
+                            permissions=["alexa::devices:all:address:full:read"]
+                        )
+                    )
+                    .response,
+                )
             return (False, response_builder.speak(texts.LOCATION_FAILURE).response)
         except Exception as e:
             logger.error(
