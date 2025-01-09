@@ -52,7 +52,14 @@ class GetPrayerTimesIntentHandler(AbstractRequestHandler):
             req_envelope = handler_input.request_envelope
             response_builder = handler_input.response_builder
 
-            latitude, longitude = get_device_location(req_envelope, response_builder)
+            success, location_result = get_device_location(
+                req_envelope, response_builder
+            )
+
+            if not success:
+                return location_result
+
+            latitude, longitude = location_result
 
             prayer_times = PrayerService.get_prayer_times(latitude, longitude)
             formatted_times = PrayerService.format_prayer_times(prayer_times)
@@ -87,7 +94,14 @@ class EnableNotificationsIntentHandler(AbstractRequestHandler):
             req_envelope = handler_input.request_envelope
             response_builder = handler_input.response_builder
 
-            latitude, longitude = get_device_location(req_envelope, response_builder)
+            success, location_result = get_device_location(
+                req_envelope, response_builder
+            )
+
+            if not success:
+                return location_result
+
+            latitude, longitude = location_result
 
             device_id = req_envelope.context.system.device.device_id
             timezone = (
@@ -95,6 +109,7 @@ class EnableNotificationsIntentHandler(AbstractRequestHandler):
                     device_id
                 )
             )
+
             user_timezone = pytz.timezone(timezone)
 
             prayer_times = PrayerService.get_prayer_times(latitude, longitude)

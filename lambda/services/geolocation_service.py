@@ -25,21 +25,22 @@ def get_city_name(lat: float, lon: float) -> Optional[str]:
         return None
 
 
-def get_device_location(req_envelope, response_builder) -> dict:
+def get_device_location(req_envelope, response_builder) -> tuple:
     if not (
         req_envelope.context.system.user.permissions
         and req_envelope.context.system.user.permissions.consent_token
     ):
         return (
+            False,
             response_builder.speak(SpeechText.NOTIFY_MISSING_PERMISSIONS)
             .set_card(AskForPermissionsConsentCard(permissions=permissions))
-            .response
+            .response,
         )
 
     try:
         geolocation = req_envelope.context.geolocation
         if not geolocation or not geolocation.coordinate:
-            return response_builder.speak(SpeechText.NO_LOCATION).response
+            return (False, response_builder.speak(SpeechText.NO_LOCATION).response)
 
         latitude = geolocation.coordinate.latitude_in_degrees
         longitude = geolocation.coordinate.longitude_in_degrees
@@ -48,7 +49,7 @@ def get_device_location(req_envelope, response_builder) -> dict:
             f"Coordinates retrieved - Latitude: {latitude}, Longitude: {longitude}"
         )
 
-        return latitude, longitude
+        return (True, (latitude, longitude))
 
     except ServiceException:
-        return response_builder.speak(SpeechText.LOCATION_FAILURE).response
+        return (False, response_builder.speak(SpeechText.LOCATION_FAILURE).response)
