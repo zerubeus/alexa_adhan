@@ -53,7 +53,7 @@ class GetPrayerTimesIntentHandler(AbstractRequestHandler):
             response_builder = handler_input.response_builder
 
             success, location_result = get_device_location(
-                req_envelope, response_builder
+                req_envelope, response_builder, handler_input.service_client_factory
             )
 
             if not success:
@@ -95,7 +95,7 @@ class EnableNotificationsIntentHandler(AbstractRequestHandler):
             response_builder = handler_input.response_builder
 
             success, location_result = get_device_location(
-                req_envelope, response_builder
+                req_envelope, response_builder, handler_input.service_client_factory
             )
 
             if not success:
