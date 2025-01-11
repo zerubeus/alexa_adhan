@@ -194,9 +194,6 @@ def get_device_location(
             device_addr_client = service_client_factory.get_device_address_service()
             addr = device_addr_client.get_full_address(device_id)
 
-            logger.info("Start debugging addr")
-            logger.info(f"Addr: {addr}")
-
             if not addr:
                 logger.warning("No address available from Device Settings API")
                 return (False, response_builder.speak(texts.NO_LOCATION).response)
