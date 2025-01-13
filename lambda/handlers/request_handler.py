@@ -172,13 +172,16 @@ class EnableNotificationsIntentHandler(AbstractRequestHandler):
                     req_envelope.context.system.user.permissions.scopes or {}
                 ):
                     logger.info("Requesting reminder permissions via voice")
+                    from ask_sdk_model.interfaces.connections import (
+                        SendRequestDirective,
+                    )
+
                     return (
                         response_builder.speak(texts.ASK_REMINDER_PERMISSION)
                         .add_directive(
-                            {
-                                "type": "Connections.SendRequest",
-                                "name": "AskFor",
-                                "payload": {
+                            SendRequestDirective(
+                                name="AskFor",
+                                payload={
                                     "@type": "AskForPermissionsConsentRequest",
                                     "@version": "2",
                                     "permissionScopes": [
@@ -188,8 +191,8 @@ class EnableNotificationsIntentHandler(AbstractRequestHandler):
                                         }
                                     ],
                                 },
-                                "token": "user_reminder_permission",
-                            }
+                                token="user_reminder_permission",
+                            )
                         )
                         .response
                     )
