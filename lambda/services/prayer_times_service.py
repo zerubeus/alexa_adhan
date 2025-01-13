@@ -124,6 +124,7 @@ class PrayerService:
                 )
 
                 trigger = Trigger(
+                    type="SCHEDULED_ABSOLUTE",
                     scheduled_time=reminder_time.isoformat(),
                     recurrence=Recurrence(
                         freq=RecurrenceFreq.DAILY,
@@ -131,6 +132,7 @@ class PrayerService:
                 )
 
                 reminder_request = Reminder(
+                    request_time=datetime.datetime.now(pytz.UTC).isoformat(),
                     trigger=trigger,
                     alert_info=AlertInfo(
                         spoken_info=SpokenInfo(
@@ -141,8 +143,8 @@ class PrayerService:
                 )
 
                 try:
-                    reminder_service.create_reminder(reminder_request)
-                    reminders.append(reminder_request)
+                    reminder = reminder_service.create_reminder(reminder_request)
+                    reminders.append(reminder)
                 except ServiceException as e:
                     if e.status_code == 403:  # Max reminders limit reached
                         raise
