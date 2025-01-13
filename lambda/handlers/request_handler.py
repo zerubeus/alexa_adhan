@@ -1,4 +1,5 @@
 import pytz
+import requests
 from aws_lambda_powertools import Logger
 from ask_sdk_core.dispatch_components import (
     AbstractRequestHandler,
@@ -164,25 +165,42 @@ class EnableNotificationsIntentHandler(AbstractRequestHandler):
 
             user_timezone = pytz.timezone(timezone)
 
-            prayer_times = PrayerService.get_prayer_times(latitude, longitude)
-            reminder_service = (
-                handler_input.service_client_factory.get_reminder_management_service()
-            )
+            try:
+                prayer_times = PrayerService.get_prayer_times(latitude, longitude)
+                if not prayer_times:
+                    logger.error("Failed to get prayer times after retries")
+                    return response_builder.speak(texts.ERROR).response
 
-            PrayerService.setup_prayer_reminders(
-                prayer_times,
-                reminder_service,
-                user_timezone,
-            )
+                reminder_service = (
+                    handler_input.service_client_factory.get_reminder_management_service()
+                )
 
-            play_directive = PrayerService.get_adhan_directive()
+                PrayerService.setup_prayer_reminders(
+                    prayer_times,
+                    reminder_service,
+                    user_timezone,
+                )
 
-            return (
-                response_builder.speak(texts.NOTIFICATION_SETUP_TEXT)
-                .add_directive(play_directive)
-                .set_should_end_session(True)
-                .response
-            )
+                play_directive = PrayerService.get_adhan_directive()
+                return (
+                    response_builder.speak(texts.NOTIFICATION_SETUP_TEXT)
+                    .add_directive(play_directive)
+                    .set_should_end_session(True)
+                    .response
+                )
+            except requests.exceptions.RequestException as e:
+                logger.error(
+                    "Failed to fetch prayer times",
+                    extra={
+                        "error": str(e),
+                        "status_code": (
+                            getattr(e.response, "status_code", None)
+                            if hasattr(e, "response")
+                            else None
+                        ),
+                    },
+                )
+                return response_builder.speak(texts.ERROR).response
 
         except ServiceException as se:
             logger.error(
