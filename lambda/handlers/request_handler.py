@@ -7,6 +7,7 @@ from ask_sdk_core.dispatch_components import (
 from ask_sdk_core.utils import is_request_type, is_intent_name
 from ask_sdk_model.services import ServiceException
 from ask_sdk_model.ui import AskForPermissionsConsentCard, SimpleCard
+from ask_sdk_model.interfaces.connections import SendRequestDirective
 from services.prayer_times_service import PrayerService
 from services.geolocation_service import get_device_location, get_city_name
 from auth.auth_permissions import permissions
@@ -159,8 +160,6 @@ class EnableNotificationsIntentHandler(AbstractRequestHandler):
 
             # Ask for reminder permission via voice
             logger.info("Requesting reminder permissions via voice")
-            from ask_sdk_model.interfaces.connections import SendRequestDirective
-
             return (
                 response_builder.speak(texts.ASK_REMINDER_PERMISSION)
                 .add_directive(
@@ -168,8 +167,13 @@ class EnableNotificationsIntentHandler(AbstractRequestHandler):
                         name="AskFor",
                         payload={
                             "@type": "AskForPermissionsConsentRequest",
-                            "@version": "1",
-                            "permissionScope": "alexa::alerts:reminders:skill:readwrite",
+                            "@version": "2",
+                            "permissionScopes": [
+                                {
+                                    "permissionScope": "alexa::alerts:reminders:skill:readwrite",
+                                    "consentLevel": "ACCOUNT",
+                                }
+                            ],
                         },
                         token="user_reminder_permission",
                     )
@@ -284,22 +288,10 @@ class ConnectionsResponseHandler(AbstractRequestHandler):
                     req_envelope = handler_input.request_envelope
                     response_builder = handler_input.response_builder
 
-                    # Get the API access token from the request context
-                    api_access_token = req_envelope.context.system.api_access_token
-                    if not api_access_token:
-                        logger.error("No API access token found in request")
-                        return response_builder.speak(texts.ERROR).response
-
-                    # Create a new service client factory with the API access token
-                    service_client_factory = handler_input.service_client_factory.__class__(
-                        api_configuration=handler_input.service_client_factory.api_configuration,
-                        authorization_value=api_access_token,
-                    )
-
                     success, location_result = get_device_location(
                         req_envelope,
                         response_builder,
-                        service_client_factory,
+                        handler_input.service_client_factory,
                     )
 
                     if not success:
@@ -313,15 +305,13 @@ class ConnectionsResponseHandler(AbstractRequestHandler):
                         return response_builder.speak(texts.ERROR).response
 
                     device_id = req_envelope.context.system.device.device_id
-                    timezone = (
-                        service_client_factory.get_ups_service().get_system_time_zone(
-                            device_id
-                        )
+                    timezone = handler_input.service_client_factory.get_ups_service().get_system_time_zone(
+                        device_id
                     )
                     user_timezone = pytz.timezone(timezone)
 
                     reminder_service = (
-                        service_client_factory.get_reminder_management_service()
+                        handler_input.service_client_factory.get_reminder_management_service()
                     )
 
                     reminders, formatted_times = PrayerService.setup_prayer_reminders(
