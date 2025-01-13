@@ -139,7 +139,9 @@ class EnableNotificationsIntentHandler(AbstractRequestHandler):
             ):
                 logger.warning("Missing location permissions")
                 return (
-                    response_builder.speak(texts.NOTIFY_MISSING_PERMISSIONS)
+                    response_builder.speak(
+                        "To get prayer times, I need access to your location. I've sent a card to help you enable this permission."
+                    )
                     .set_card(
                         AskForPermissionsConsentCard(
                             permissions=["alexa::devices:all:address:full:read"]
@@ -148,29 +150,7 @@ class EnableNotificationsIntentHandler(AbstractRequestHandler):
                     .response
                 )
 
-            # If location permission is granted, ask for reminder permission
-            if "alexa::alerts:reminders:skill:readwrite" not in (
-                req_envelope.context.system.user.permissions.scopes or {}
-            ):
-                logger.info("Requesting reminder permissions via voice")
-                return (
-                    response_builder.speak(texts.ASK_REMINDER_PERMISSION)
-                    .add_directive(
-                        {
-                            "type": "Connections.SendRequest",
-                            "name": "AskFor",
-                            "payload": {
-                                "@type": "AskForPermissionsConsentRequest",
-                                "@version": "1",
-                                "permissionScope": "alexa::alerts:reminders:skill:readwrite",
-                            },
-                            "token": "user_reminder_permission",
-                        }
-                    )
-                    .response
-                )
-
-            # If we have both permissions, proceed with reminder setup
+            # Get location first
             success, location_result = get_device_location(
                 req_envelope, response_builder, handler_input.service_client_factory
             )
@@ -180,19 +160,46 @@ class EnableNotificationsIntentHandler(AbstractRequestHandler):
 
             latitude, longitude = location_result
 
-            device_id = req_envelope.context.system.device.device_id
-
-            timezone = handler_input.service_client_factory.get_ups_service().get_system_time_zone(
-                device_id
-            )
-
-            user_timezone = pytz.timezone(timezone)
-
+            # Get prayer times
             try:
                 prayer_times = PrayerService.get_prayer_times(latitude, longitude)
                 if not prayer_times:
                     logger.error("Failed to get prayer times after retries")
                     return response_builder.speak(texts.ERROR).response
+
+                # Ask for reminder permission via voice
+                if "alexa::alerts:reminders:skill:readwrite" not in (
+                    req_envelope.context.system.user.permissions.scopes or {}
+                ):
+                    logger.info("Requesting reminder permissions via voice")
+                    return (
+                        response_builder.speak(texts.ASK_REMINDER_PERMISSION)
+                        .add_directive(
+                            {
+                                "type": "Connections.SendRequest",
+                                "name": "AskFor",
+                                "payload": {
+                                    "@type": "AskForPermissionsConsentRequest",
+                                    "@version": "2",
+                                    "permissionScopes": [
+                                        {
+                                            "permissionScope": "alexa::alerts:reminders:skill:readwrite",
+                                            "consentLevel": "ACCOUNT",
+                                        }
+                                    ],
+                                },
+                                "token": "user_reminder_permission",
+                            }
+                        )
+                        .response
+                    )
+
+                # If we have both permissions, proceed with reminder setup
+                device_id = req_envelope.context.system.device.device_id
+                timezone = handler_input.service_client_factory.get_ups_service().get_system_time_zone(
+                    device_id
+                )
+                user_timezone = pytz.timezone(timezone)
 
                 reminder_service = (
                     handler_input.service_client_factory.get_reminder_management_service()

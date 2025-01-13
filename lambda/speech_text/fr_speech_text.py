@@ -1,7 +1,7 @@
 class SpeechText:
     WELCOME = "Bienvenue dans Heures de Prière!"
     WHAT_DO_YOU_WANT = "Que puis-je faire pour vous?"
-    NOTIFY_MISSING_PERMISSIONS = "Pour configurer les rappels de prière, vous devez autoriser l'accès à votre localisation et aux rappels dans l'application Alexa. J'ai envoyé une carte pour vous aider à activer ces permissions."
+    NOTIFY_MISSING_PERMISSIONS = "Pour obtenir les heures de prière, j'ai besoin d'accéder à votre localisation. J'ai envoyé une carte pour vous aider à activer cette permission."
     NO_LOCATION = "Je n'ai pas pu obtenir votre localisation. Veuillez vérifier vos paramètres de localisation dans l'application Alexa."
     ERROR = "Désolé, une erreur s'est produite. Veuillez réessayer!"
     LOCATION_FAILURE = "Je n'ai pas pu obtenir votre localisation. Veuillez vérifier vos paramètres de localisation et réessayer."
@@ -9,7 +9,7 @@ class SpeechText:
     FALL_BACK_TEXT = "Désolé, je n'ai pas compris. Veuillez réessayer."
     NOTIFICATION_SETUP_TEXT = "J'ai configuré les notifications pour les heures de prière. Vous recevrez une notification avant chaque prière."
     GOODBYE = "Au revoir!"
-    ASK_REMINDER_PERMISSION = "Voulez-vous que je configure des rappels quotidiens pour les heures de prière? Je vous notifierai avant chaque prière."
+    ASK_REMINDER_PERMISSION = "Voulez-vous que je configure des rappels quotidiens pour les heures de prière? Je vous notifierai 10 minutes avant chaque prière."
     MAX_REMINDERS_ERROR = "Désolé, vous avez atteint le nombre maximum de rappels. Veuillez supprimer des rappels existants et réessayer."
     REMINDER_SETUP_CONFIRMATION = "Je vais configurer des rappels quotidiens pour les heures de prière suivantes : {}"
     PERMISSION_DENIED = "D'accord, je ne configurerai pas de rappels. Vous pouvez me le redemander à tout moment si vous changez d'avis."
