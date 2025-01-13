@@ -157,10 +157,9 @@ class EnableNotificationsIntentHandler(AbstractRequestHandler):
             latitude, longitude = location_result
 
             device_id = req_envelope.context.system.device.device_id
-            timezone = (
-                handler_input.service_client_factory.ups_service.get_system_time_zone(
-                    device_id
-                )
+
+            timezone = handler_input.service_client_factory.get_ups_service().get_system_time_zone(
+                device_id
             )
 
             user_timezone = pytz.timezone(timezone)
