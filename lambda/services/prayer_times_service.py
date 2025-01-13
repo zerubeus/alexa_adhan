@@ -124,7 +124,7 @@ class PrayerService:
                 )
 
                 trigger = Trigger(
-                    type="SCHEDULED_ABSOLUTE",
+                    trigger_type="SCHEDULED_ABSOLUTE",
                     scheduled_time=reminder_time.isoformat(),
                     recurrence=Recurrence(
                         freq=RecurrenceFreq.DAILY,
