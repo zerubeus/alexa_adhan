@@ -100,11 +100,19 @@ class PrayerService:
                     prayer_times[prayer], "%H:%M"
                 ).time()
 
-                reminder_time = datetime.datetime.combine(
-                    datetime.datetime.now(user_timezone).date(), prayer_time
+                now = datetime.datetime.now(user_timezone)
+                today = now.date()
+
+                reminder_time = user_timezone.localize(
+                    datetime.datetime.combine(today, prayer_time)
                 )
-                if reminder_time < datetime.datetime.now(user_timezone):
-                    reminder_time += datetime.timedelta(days=1)
+
+                if reminder_time < now:
+                    reminder_time = user_timezone.localize(
+                        datetime.datetime.combine(
+                            today + datetime.timedelta(days=1), prayer_time
+                        )
+                    )
 
                 trigger = Trigger(
                     type="SCHEDULED_ABSOLUTE",
@@ -115,7 +123,7 @@ class PrayerService:
                 )
 
                 reminder_request = Reminder(
-                    request_time=datetime.datetime.now(user_timezone).isoformat(),
+                    request_time=now.isoformat(),
                     trigger=trigger,
                     alert_info=AlertInfo(
                         spoken_info=SpokenInfo(content=[f"Time for {prayer} prayer"])
