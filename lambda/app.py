@@ -9,6 +9,7 @@ from handlers.request_handler import (
     CancelAndStopIntentHandler,
     FallbackIntentHandler,
     EnableNotificationsIntentHandler,
+    ConnectionsResponseHandler,
     GetPrayerTimesExceptionHandler,
     CatchAllExceptionHandler,
 )
@@ -22,6 +23,7 @@ sb.add_request_handler(HelpIntentHandler())
 sb.add_request_handler(CancelAndStopIntentHandler())
 sb.add_request_handler(FallbackIntentHandler())
 sb.add_request_handler(EnableNotificationsIntentHandler())
+sb.add_request_handler(ConnectionsResponseHandler())
 
 sb.add_exception_handler(GetPrayerTimesExceptionHandler())
 sb.add_exception_handler(CatchAllExceptionHandler())

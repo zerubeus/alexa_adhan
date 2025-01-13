@@ -1,9 +1,7 @@
 class SpeechText:
     WELCOME = "Welcome to Prayer Times!"
     WHAT_DO_YOU_WANT = "What can I help you with?"
-    NOTIFY_MISSING_PERMISSIONS = (
-        "To use this feature, you need to grant location access in the Alexa app."
-    )
+    NOTIFY_MISSING_PERMISSIONS = "To set up prayer reminders, you need to grant both location and reminder permissions in the Alexa app. I've sent a card to help you enable these permissions."
     NO_LOCATION = "I couldn't get your location. Please check your location settings in the Alexa app."
     ERROR = "Sorry, something went wrong. Please try again!"
     LOCATION_FAILURE = "I couldn't get your location. Please check your location settings and try again."
@@ -16,3 +14,4 @@ class SpeechText:
     REMINDER_SETUP_CONFIRMATION = (
         "I'll set up daily reminders for the following prayer times: {}"
     )
+    PERMISSION_DENIED = "Okay, I won't set up any reminders. You can ask me again anytime if you change your mind."

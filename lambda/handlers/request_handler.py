@@ -132,27 +132,45 @@ class EnableNotificationsIntentHandler(AbstractRequestHandler):
             req_envelope = handler_input.request_envelope
             response_builder = handler_input.response_builder
 
-            # Check if we have the permissions
+            # First, ask for location permission if not granted
             if not (
                 req_envelope.context.system.user.permissions
                 and req_envelope.context.system.user.permissions.consent_token
-                and "alexa::alerts:reminders:skill:readwrite"
-                in (req_envelope.context.system.user.permissions.scopes or {})
             ):
-                logger.warning("Missing permissions for reminders")
+                logger.warning("Missing location permissions")
                 return (
                     response_builder.speak(texts.NOTIFY_MISSING_PERMISSIONS)
                     .set_card(
                         AskForPermissionsConsentCard(
-                            permissions=[
-                                "alexa::devices:all:address:full:read",
-                                "alexa::alerts:reminders:skill:readwrite",
-                            ]
+                            permissions=["alexa::devices:all:address:full:read"]
                         )
                     )
                     .response
                 )
 
+            # If location permission is granted, ask for reminder permission
+            if "alexa::alerts:reminders:skill:readwrite" not in (
+                req_envelope.context.system.user.permissions.scopes or {}
+            ):
+                logger.info("Requesting reminder permissions via voice")
+                return (
+                    response_builder.speak(texts.ASK_REMINDER_PERMISSION)
+                    .add_directive(
+                        {
+                            "type": "Connections.SendRequest",
+                            "name": "AskFor",
+                            "payload": {
+                                "@type": "AskForPermissionsConsentRequest",
+                                "@version": "1",
+                                "permissionScope": "alexa::alerts:reminders:skill:readwrite",
+                            },
+                            "token": "user_reminder_permission",
+                        }
+                    )
+                    .response
+                )
+
+            # If we have both permissions, proceed with reminder setup
             success, location_result = get_device_location(
                 req_envelope, response_builder, handler_input.service_client_factory
             )
@@ -231,19 +249,6 @@ class EnableNotificationsIntentHandler(AbstractRequestHandler):
                     .set_card(
                         AskForPermissionsConsentCard(
                             permissions=["alexa::devices:all:address:full:read"]
-                        )
-                    )
-                    .response
-                )
-            if se.status_code == 401:
-                return (
-                    response_builder.speak(texts.NOTIFY_MISSING_PERMISSIONS)
-                    .set_card(
-                        AskForPermissionsConsentCard(
-                            permissions=[
-                                "alexa::devices:all:address:full:read",
-                                "alexa::alerts:reminders:skill:readwrite",
-                            ]
                         )
                     )
                     .response
@@ -339,3 +344,27 @@ class FallbackIntentHandler(AbstractRequestHandler):
             .set_should_end_session(False)
             .response
         )
+
+
+class ConnectionsResponseHandler(AbstractRequestHandler):
+    def can_handle(self, handler_input):
+        return is_request_type("Connections.Response")(handler_input)
+
+    def handle(self, handler_input):
+        locale = handler_input.request_envelope.request.locale
+        texts = get_speech_text(locale)
+        request = handler_input.request_envelope.request
+
+        if request.name == "AskFor" and request.status.code == "200":
+            if request.payload.get("status") == "ACCEPTED":
+                # Permission granted, proceed with reminder setup
+                return EnableNotificationsIntentHandler().handle(handler_input)
+            else:
+                # Permission denied
+                return (
+                    handler_input.response_builder.speak(texts.PERMISSION_DENIED)
+                    .set_should_end_session(True)
+                    .response
+                )
+
+        return handler_input.response_builder.speak(texts.ERROR).response
