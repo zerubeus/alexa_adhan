@@ -192,33 +192,29 @@ def get_device_location(
         try:
             device_id = req_envelope.context.system.device.device_id
             device_addr_client = service_client_factory.get_device_address_service()
-            addr = device_addr_client.get_full_address(device_id)
 
-            if not addr:
-                logger.warning("No address available from Device Settings API")
-                return (False, response_builder.speak(texts.NO_LOCATION).response)
+            try:
+                addr = device_addr_client.get_full_address(device_id)
+                address_parts = {
+                    "addressLine1": addr.addressLine1,
+                    "city": addr.city,
+                    "stateOrRegion": addr.stateOrRegion,
+                    "postalCode": addr.postalCode,
+                    "countryCode": addr.countryCode,
+                }
+            except ServiceException:
+                addr_response = device_addr_client.get_country_and_postal_code(
+                    device_id
+                )
+                address_parts = {
+                    "postalCode": addr_response.body["postal_code"],
+                    "countryCode": addr_response.body["country_code"],
+                }
 
             logger.info(
                 "Retrieved address from Device Settings API",
-                extra={
-                    "address_line1": addr.addressLine1,
-                    "address_line2": addr.addressLine2,
-                    "address_line3": addr.addressLine3,
-                    "city": addr.city,
-                    "state_or_region": addr.stateOrRegion,
-                    "postal_code": addr.postalCode,
-                    "country": addr.countryCode,
-                },
+                extra={"address_parts": address_parts},
             )
-
-            # Convert address to coordinates
-            address_parts = {
-                "addressLine1": addr.addressLine1,
-                "city": addr.city,
-                "stateOrRegion": addr.stateOrRegion,
-                "postalCode": addr.postalCode,
-                "countryCode": addr.countryCode,
-            }
 
             coordinates = get_coordinates_from_address(address_parts)
             if coordinates:
