@@ -122,7 +122,6 @@ class PrayerService:
                 )
 
                 reminder_request = Reminder(
-                    request_time=now.isoformat(),
                     trigger=trigger,
                     alert_info=AlertInfo(
                         spoken_info=SpokenInfo(content=[f"Time for {prayer} prayer"])
