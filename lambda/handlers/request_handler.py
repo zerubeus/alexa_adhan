@@ -136,13 +136,18 @@ class EnableNotificationsIntentHandler(AbstractRequestHandler):
             if not (
                 req_envelope.context.system.user.permissions
                 and req_envelope.context.system.user.permissions.consent_token
+                and "alexa::alerts:reminders:skill:readwrite"
+                in (req_envelope.context.system.user.permissions.scopes or {})
             ):
-                logger.warning("Missing permissions for device address")
+                logger.warning("Missing permissions for reminders")
                 return (
                     response_builder.speak(texts.NOTIFY_MISSING_PERMISSIONS)
                     .set_card(
                         AskForPermissionsConsentCard(
-                            permissions=["alexa::devices:all:address:full:read"]
+                            permissions=[
+                                "alexa::devices:all:address:full:read",
+                                "alexa::alerts:reminders:skill:readwrite",
+                            ]
                         )
                     )
                     .response
@@ -217,6 +222,19 @@ class EnableNotificationsIntentHandler(AbstractRequestHandler):
                     .set_card(
                         AskForPermissionsConsentCard(
                             permissions=["alexa::devices:all:address:full:read"]
+                        )
+                    )
+                    .response
+                )
+            if se.status_code == 401:
+                return (
+                    response_builder.speak(texts.NOTIFY_MISSING_PERMISSIONS)
+                    .set_card(
+                        AskForPermissionsConsentCard(
+                            permissions=[
+                                "alexa::devices:all:address:full:read",
+                                "alexa::alerts:reminders:skill:readwrite",
+                            ]
                         )
                     )
                     .response
