@@ -180,19 +180,28 @@ class EnableNotificationsIntentHandler(AbstractRequestHandler):
                     handler_input.service_client_factory.get_reminder_management_service()
                 )
 
-                PrayerService.setup_prayer_reminders(
+                reminders, formatted_times = PrayerService.setup_prayer_reminders(
                     prayer_times,
                     reminder_service,
                     user_timezone,
                 )
 
+                confirmation_text = texts.REMINDER_SETUP_CONFIRMATION.format(
+                    formatted_times
+                )
                 play_directive = PrayerService.get_adhan_directive()
+
                 return (
-                    response_builder.speak(texts.NOTIFICATION_SETUP_TEXT)
+                    response_builder.speak(confirmation_text)
                     .add_directive(play_directive)
                     .set_should_end_session(True)
                     .response
                 )
+
+            except ServiceException as se:
+                if se.status_code == 403:  # Max reminders limit reached
+                    return response_builder.speak(texts.MAX_REMINDERS_ERROR).response
+                raise  # Let the outer exception handler deal with other service exceptions
             except requests.exceptions.RequestException as e:
                 logger.error(
                     "Failed to fetch prayer times",

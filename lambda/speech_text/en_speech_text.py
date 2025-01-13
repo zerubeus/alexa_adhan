@@ -11,3 +11,8 @@ class SpeechText:
     FALL_BACK_TEXT = "Sorry, I didn't understand that. Please try again."
     NOTIFICATION_SETUP_TEXT = "I've set up notifications for prayer times. You'll receive a notification before each prayer."
     GOODBYE = "Goodbye!"
+    ASK_REMINDER_PERMISSION = "Would you like me to set up daily prayer time reminders? I'll notify you before each prayer time."
+    MAX_REMINDERS_ERROR = "Sorry, you've reached the maximum number of reminders. Please delete some existing reminders and try again."
+    REMINDER_SETUP_CONFIRMATION = (
+        "I'll set up daily reminders for the following prayer times: {}"
+    )

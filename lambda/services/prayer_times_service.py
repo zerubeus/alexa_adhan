@@ -3,8 +3,9 @@ import requests
 import time
 import datetime
 import pytz
-from typing import List, Optional
+from typing import List, Optional, Tuple
 from aws_lambda_powertools import Logger
+from ask_sdk_model.services import ServiceException
 from ask_sdk_model.services.reminder_management import (
     Reminder,
     Trigger,
@@ -91,8 +92,9 @@ class PrayerService:
         prayer_times: dict,
         reminder_service,
         user_timezone: pytz.timezone,
-    ) -> List[Reminder]:
+    ) -> Tuple[List[Reminder], str]:
         reminders = []
+        formatted_times = []
 
         for prayer in PrayerService.PRAYERS:
             if prayer in prayer_times:
@@ -107,12 +109,19 @@ class PrayerService:
                     datetime.datetime.combine(today, prayer_time)
                 )
 
+                # Set reminder 10 minutes before prayer time
+                reminder_time = reminder_time - datetime.timedelta(minutes=10)
+
                 if reminder_time < now:
                     reminder_time = user_timezone.localize(
                         datetime.datetime.combine(
                             today + datetime.timedelta(days=1), prayer_time
                         )
-                    )
+                    ) - datetime.timedelta(minutes=10)
+
+                formatted_times.append(
+                    f"{prayer} at {prayer_time.strftime('%I:%M %p')}"
+                )
 
                 trigger = Trigger(
                     scheduled_time=reminder_time.isoformat(),
@@ -124,14 +133,25 @@ class PrayerService:
                 reminder_request = Reminder(
                     trigger=trigger,
                     alert_info=AlertInfo(
-                        spoken_info=SpokenInfo(content=[f"Time for {prayer} prayer"])
+                        spoken_info=SpokenInfo(
+                            content=[f"Time for {prayer} prayer in 10 minutes"]
+                        )
                     ),
                     push_notification=PushNotification(status="ENABLED"),
                 )
-                reminder_service.create_reminder(reminder_request)
-                reminders.append(reminder_request)
 
-        return reminders
+                try:
+                    reminder_service.create_reminder(reminder_request)
+                    reminders.append(reminder_request)
+                except ServiceException as e:
+                    if e.status_code == 403:  # Max reminders limit reached
+                        raise
+                    logger.error(
+                        f"Failed to create reminder for {prayer}",
+                        extra={"error": str(e), "status_code": e.status_code},
+                    )
+
+        return reminders, ", ".join(formatted_times)
 
     @staticmethod
     def get_adhan_directive() -> PlayDirective:
