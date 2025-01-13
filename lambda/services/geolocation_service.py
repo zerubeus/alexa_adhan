@@ -207,8 +207,8 @@ def get_device_location(
                     device_id
                 )
                 address_parts = {
-                    "postalCode": addr_response.body["postal_code"],
-                    "countryCode": addr_response.body["country_code"],
+                    "postalCode": addr_response.postal_code,
+                    "countryCode": addr_response.country_code,
                 }
 
             logger.info(
