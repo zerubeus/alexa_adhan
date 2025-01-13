@@ -183,13 +183,8 @@ class EnableNotificationsIntentHandler(AbstractRequestHandler):
                                 name="AskFor",
                                 payload={
                                     "@type": "AskForPermissionsConsentRequest",
-                                    "@version": "2",
-                                    "permissionScopes": [
-                                        {
-                                            "permissionScope": "alexa::alerts:reminders:skill:readwrite",
-                                            "consentLevel": "ACCOUNT",
-                                        }
-                                    ],
+                                    "@version": "1",
+                                    "permissionScope": "alexa::alerts:reminders:skill:readwrite",
                                 },
                                 token="user_reminder_permission",
                             )
