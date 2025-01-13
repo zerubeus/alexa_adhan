@@ -6,15 +6,6 @@ import pytz
 from typing import List, Optional, Tuple
 from aws_lambda_powertools import Logger
 from ask_sdk_model.services import ServiceException
-from ask_sdk_model.services.reminder_management import (
-    Reminder,
-    Trigger,
-    AlertInfo,
-    SpokenInfo,
-    PushNotification,
-    RecurrenceFreq,
-    Recurrence,
-)
 from ask_sdk_model.interfaces.audioplayer import (
     PlayDirective,
     AudioItem,
@@ -92,7 +83,7 @@ class PrayerService:
         prayer_times: dict,
         reminder_service,
         user_timezone: pytz.timezone,
-    ) -> Tuple[List[Reminder], str]:
+    ) -> Tuple[List[dict], str]:
         reminders = []
         formatted_times = []
 
@@ -123,24 +114,28 @@ class PrayerService:
                     f"{prayer} at {prayer_time.strftime('%I:%M %p')}"
                 )
 
-                trigger = Trigger(
-                    trigger_type="SCHEDULED_ABSOLUTE",
-                    scheduled_time=reminder_time.isoformat(),
-                    recurrence=Recurrence(
-                        freq=RecurrenceFreq.DAILY,
-                    ),
-                )
+                trigger = {
+                    "type": "SCHEDULED_ABSOLUTE",
+                    "scheduledTime": reminder_time.isoformat(),
+                    "recurrence": {"freq": "DAILY"},
+                    "timeZoneId": str(user_timezone),
+                }
 
-                reminder_request = Reminder(
-                    request_time=datetime.datetime.now(pytz.UTC).isoformat(),
-                    trigger=trigger,
-                    alert_info=AlertInfo(
-                        spoken_info=SpokenInfo(
-                            content=[f"Time for {prayer} prayer in 10 minutes"]
-                        )
-                    ),
-                    push_notification=PushNotification(status="ENABLED"),
-                )
+                reminder_request = {
+                    "requestTime": datetime.datetime.now(pytz.UTC).isoformat(),
+                    "trigger": trigger,
+                    "alertInfo": {
+                        "spokenInfo": {
+                            "content": [
+                                {
+                                    "locale": "en-US",
+                                    "text": f"Time for {prayer} prayer in 10 minutes",
+                                }
+                            ]
+                        }
+                    },
+                    "pushNotification": {"status": "ENABLED"},
+                }
 
                 try:
                     reminder = reminder_service.create_reminder(reminder_request)
