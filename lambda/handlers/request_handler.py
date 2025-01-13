@@ -284,10 +284,22 @@ class ConnectionsResponseHandler(AbstractRequestHandler):
                     req_envelope = handler_input.request_envelope
                     response_builder = handler_input.response_builder
 
+                    # Get the API access token from the request context
+                    api_access_token = req_envelope.context.system.api_access_token
+                    if not api_access_token:
+                        logger.error("No API access token found in request")
+                        return response_builder.speak(texts.ERROR).response
+
+                    # Create a new service client factory with the API access token
+                    service_client_factory = handler_input.service_client_factory.__class__(
+                        api_configuration=handler_input.service_client_factory.api_configuration,
+                        authorization_value=api_access_token,
+                    )
+
                     success, location_result = get_device_location(
                         req_envelope,
                         response_builder,
-                        handler_input.service_client_factory,
+                        service_client_factory,
                     )
 
                     if not success:
@@ -301,13 +313,15 @@ class ConnectionsResponseHandler(AbstractRequestHandler):
                         return response_builder.speak(texts.ERROR).response
 
                     device_id = req_envelope.context.system.device.device_id
-                    timezone = handler_input.service_client_factory.get_ups_service().get_system_time_zone(
-                        device_id
+                    timezone = (
+                        service_client_factory.get_ups_service().get_system_time_zone(
+                            device_id
+                        )
                     )
                     user_timezone = pytz.timezone(timezone)
 
                     reminder_service = (
-                        handler_input.service_client_factory.get_reminder_management_service()
+                        service_client_factory.get_reminder_management_service()
                     )
 
                     reminders, formatted_times = PrayerService.setup_prayer_reminders(
