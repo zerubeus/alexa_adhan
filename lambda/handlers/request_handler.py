@@ -1,5 +1,4 @@
 import pytz
-import requests
 from aws_lambda_powertools import Logger
 from ask_sdk_core.dispatch_components import (
     AbstractRequestHandler,
@@ -158,107 +157,25 @@ class EnableNotificationsIntentHandler(AbstractRequestHandler):
             if not success:
                 return location_result
 
-            latitude, longitude = location_result
+            # Ask for reminder permission via voice
+            logger.info("Requesting reminder permissions via voice")
+            from ask_sdk_model.interfaces.connections import SendRequestDirective
 
-            # Get prayer times
-            try:
-                prayer_times = PrayerService.get_prayer_times(latitude, longitude)
-                if not prayer_times:
-                    logger.error("Failed to get prayer times after retries")
-                    return response_builder.speak(texts.ERROR).response
-
-                # Ask for reminder permission via voice
-                if "alexa::alerts:reminders:skill:readwrite" not in (
-                    req_envelope.context.system.user.permissions.scopes or {}
-                ):
-                    logger.info("Requesting reminder permissions via voice")
-                    from ask_sdk_model.interfaces.connections import (
-                        SendRequestDirective,
+            return (
+                response_builder.speak(texts.ASK_REMINDER_PERMISSION)
+                .add_directive(
+                    SendRequestDirective(
+                        name="AskFor",
+                        payload={
+                            "@type": "AskForPermissionsConsentRequest",
+                            "@version": "1",
+                            "permissionScope": "alexa::alerts:reminders:skill:readwrite",
+                        },
+                        token="user_reminder_permission",
                     )
-
-                    return (
-                        response_builder.speak(texts.ASK_REMINDER_PERMISSION)
-                        .add_directive(
-                            SendRequestDirective(
-                                name="AskFor",
-                                payload={
-                                    "@type": "AskForPermissionsConsentRequest",
-                                    "@version": "1",
-                                    "permissionScope": "alexa::alerts:reminders:skill:readwrite",
-                                },
-                                token="user_reminder_permission",
-                            )
-                        )
-                        .response
-                    )
-
-                # If we have both permissions, proceed with reminder setup
-                device_id = req_envelope.context.system.device.device_id
-                timezone = handler_input.service_client_factory.get_ups_service().get_system_time_zone(
-                    device_id
                 )
-                user_timezone = pytz.timezone(timezone)
-
-                reminder_service = (
-                    handler_input.service_client_factory.get_reminder_management_service()
-                )
-
-                reminders, formatted_times = PrayerService.setup_prayer_reminders(
-                    prayer_times,
-                    reminder_service,
-                    user_timezone,
-                )
-
-                confirmation_text = texts.REMINDER_SETUP_CONFIRMATION.format(
-                    formatted_times
-                )
-                play_directive = PrayerService.get_adhan_directive()
-
-                return (
-                    response_builder.speak(confirmation_text)
-                    .add_directive(play_directive)
-                    .set_should_end_session(True)
-                    .response
-                )
-
-            except ServiceException as se:
-                if se.status_code == 403:  # Max reminders limit reached
-                    return response_builder.speak(texts.MAX_REMINDERS_ERROR).response
-                raise  # Let the outer exception handler deal with other service exceptions
-            except requests.exceptions.RequestException as e:
-                logger.error(
-                    "Failed to fetch prayer times",
-                    extra={
-                        "error": str(e),
-                        "status_code": (
-                            getattr(e.response, "status_code", None)
-                            if hasattr(e, "response")
-                            else None
-                        ),
-                    },
-                )
-                return response_builder.speak(texts.ERROR).response
-
-        except ServiceException as se:
-            logger.error(
-                "ServiceException in EnableNotificationsIntentHandler",
-                extra={
-                    "error_type": type(se).__name__,
-                    "error_message": str(se),
-                    "status_code": getattr(se, "status_code", None),
-                },
+                .response
             )
-            if se.status_code == 403:
-                return (
-                    response_builder.speak(texts.NOTIFY_MISSING_PERMISSIONS)
-                    .set_card(
-                        AskForPermissionsConsentCard(
-                            permissions=["alexa::devices:all:address:full:read"]
-                        )
-                    )
-                    .response
-                )
-            return response_builder.speak(texts.LOCATION_FAILURE).response
 
         except Exception as e:
             logger.exception(f"Error in EnableNotificationsIntentHandler: {e}")
