@@ -368,7 +368,71 @@ class ConnectionsResponseHandler(AbstractRequestHandler):
         if request.name == "AskFor" and request.status.code == "200":
             if request.payload.get("status") == "ACCEPTED":
                 # Permission granted, proceed with reminder setup
-                return EnableNotificationsIntentHandler().handle(handler_input)
+                try:
+                    req_envelope = handler_input.request_envelope
+                    response_builder = handler_input.response_builder
+
+                    success, location_result = get_device_location(
+                        req_envelope,
+                        response_builder,
+                        handler_input.service_client_factory,
+                    )
+
+                    if not success:
+                        return location_result
+
+                    latitude, longitude = location_result
+
+                    prayer_times = PrayerService.get_prayer_times(latitude, longitude)
+                    if not prayer_times:
+                        logger.error("Failed to get prayer times after retries")
+                        return response_builder.speak(texts.ERROR).response
+
+                    device_id = req_envelope.context.system.device.device_id
+                    timezone = handler_input.service_client_factory.get_ups_service().get_system_time_zone(
+                        device_id
+                    )
+                    user_timezone = pytz.timezone(timezone)
+
+                    reminder_service = (
+                        handler_input.service_client_factory.get_reminder_management_service()
+                    )
+
+                    reminders, formatted_times = PrayerService.setup_prayer_reminders(
+                        prayer_times,
+                        reminder_service,
+                        user_timezone,
+                    )
+
+                    confirmation_text = texts.REMINDER_SETUP_CONFIRMATION.format(
+                        formatted_times
+                    )
+                    play_directive = PrayerService.get_adhan_directive()
+
+                    return (
+                        response_builder.speak(confirmation_text)
+                        .add_directive(play_directive)
+                        .set_should_end_session(True)
+                        .response
+                    )
+
+                except ServiceException as se:
+                    if se.status_code == 403:  # Max reminders limit reached
+                        return response_builder.speak(
+                            texts.MAX_REMINDERS_ERROR
+                        ).response
+                    logger.error(
+                        "ServiceException in ConnectionsResponseHandler",
+                        extra={
+                            "error_type": type(se).__name__,
+                            "error_message": str(se),
+                            "status_code": getattr(se, "status_code", None),
+                        },
+                    )
+                    return response_builder.speak(texts.ERROR).response
+                except Exception as e:
+                    logger.exception(f"Error in ConnectionsResponseHandler: {e}")
+                    return handler_input.response_builder.speak(texts.ERROR).response
             else:
                 # Permission denied
                 return (
