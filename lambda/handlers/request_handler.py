@@ -130,7 +130,6 @@ class EnableNotificationsIntentHandler(AbstractRequestHandler):
             req_envelope = handler_input.request_envelope
             response_builder = handler_input.response_builder
 
-            # First, ask for location permission if not granted
             if not (
                 req_envelope.context.system.user.permissions
                 and req_envelope.context.system.user.permissions.consent_token
@@ -148,7 +147,6 @@ class EnableNotificationsIntentHandler(AbstractRequestHandler):
                     .response
                 )
 
-            # Get location first
             success, location_result = get_device_location(
                 req_envelope, response_builder, handler_input.service_client_factory
             )
@@ -156,7 +154,6 @@ class EnableNotificationsIntentHandler(AbstractRequestHandler):
             if not success:
                 return location_result
 
-            # Ask for reminder permission via voice
             logger.info("Requesting reminder permissions via voice")
             return (
                 response_builder.speak(texts.ASK_REMINDER_PERMISSION)
@@ -281,7 +278,6 @@ class ConnectionsResponseHandler(AbstractRequestHandler):
 
         if request.name == "AskFor" and request.status.code == "200":
             if request.payload.get("status") == "ACCEPTED":
-                # Permission granted, proceed with reminder setup
                 try:
                     req_envelope = handler_input.request_envelope
                     response_builder = handler_input.response_builder
@@ -348,7 +344,6 @@ class ConnectionsResponseHandler(AbstractRequestHandler):
                     logger.exception(f"Error in ConnectionsResponseHandler: {e}")
                     return handler_input.response_builder.speak(texts.ERROR).response
             else:
-                # Permission denied
                 return (
                     handler_input.response_builder.speak(texts.PERMISSION_DENIED)
                     .set_should_end_session(True)
