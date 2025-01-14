@@ -53,7 +53,6 @@ class GetPrayerTimesIntentHandler(AbstractRequestHandler):
             req_envelope = handler_input.request_envelope
             response_builder = handler_input.response_builder
 
-            # Check if we have the permissions
             if not (
                 req_envelope.context.system.user.permissions
                 and req_envelope.context.system.user.permissions.consent_token
@@ -82,11 +81,10 @@ class GetPrayerTimesIntentHandler(AbstractRequestHandler):
             formatted_times = PrayerService.format_prayer_times(prayer_times)
 
             city_name = get_city_name(latitude, longitude)
+
             location_text = f" in {city_name}" if city_name else ""
 
-            speech_text = (
-                f"Here are today's prayer times{location_text}: {formatted_times}"
-            )
+            speech_text = texts.PRIER_TIMES.format(formatted_times) + location_text
 
             return (
                 response_builder.speak(speech_text)

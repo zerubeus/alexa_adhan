@@ -29,5 +29,4 @@ sb.add_exception_handler(GetPrayerTimesExceptionHandler())
 sb.add_exception_handler(CatchAllExceptionHandler())
 
 
-def lambda_handler(event, context):
-    return sb.lambda_handler()(event, context)
+handler = sb.lambda_handler()
