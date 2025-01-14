@@ -12,9 +12,9 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: lambda/
-      Handler: app.lambda_handler
+      Handler: app.handler
       Timeout: 30
-      MemorySize: 128
+      MemorySize: 256
       Runtime: python3.11
       Architectures:
         - arm64
