@@ -1,6 +1,8 @@
 # Alexa Adhan
 
-![Alexa Adhan](skill-package/assets/en-US_largeIcon.png)
+<p align="center">
+  <img src="skill-package/assets/en-US_largeIcon.png" alt="Alexa Adhan" width="512">
+</p>
 
 ## Project Functional Description
 
