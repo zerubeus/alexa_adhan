@@ -84,7 +84,7 @@ class GetPrayerTimesIntentHandler(AbstractRequestHandler):
 
             location_text = f" in {city_name}" if city_name else ""
 
-            speech_text = texts.PRIER_TIMES.format(formatted_times) + location_text
+            speech_text = texts.PRIER_TIMES.format(*formatted_times) + location_text
 
             return (
                 response_builder.speak(speech_text)
