@@ -15,4 +15,5 @@ class SpeechText:
         "I'll set up daily reminders for the following prayer times: {}"
     )
     PERMISSION_DENIED = "Okay, I won't set up any reminders. You can ask me again anytime if you change your mind."
-    PRIER_TIMES = "The prayer times for today are: Fajr at {}, Dhuhr at {}, Asr at {}, Maghrib at {}, Isha at {}."
+    PRIER_TIMES = "The prayer times for today are: {}."
+    LOCATION_TEXT = " in {}."
