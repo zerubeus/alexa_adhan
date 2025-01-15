@@ -1,16 +1,17 @@
 import pytz
-from aws_lambda_powertools import Logger
 from ask_sdk_core.dispatch_components import (
     AbstractRequestHandler,
     AbstractExceptionHandler,
 )
 from ask_sdk_core.utils import is_request_type, is_intent_name
+from ask_sdk_model.interfaces.connections import SendRequestDirective
 from ask_sdk_model.services import ServiceException
 from ask_sdk_model.ui import AskForPermissionsConsentCard, SimpleCard
-from ask_sdk_model.interfaces.connections import SendRequestDirective
-from services.prayer_times_service import PrayerService
-from services.geolocation_service import get_device_location, get_city_name
+from aws_lambda_powertools import Logger
+
 from auth.auth_permissions import permissions
+from services.geolocation_service import get_device_location, get_city_name
+from services.prayer_times_service import PrayerService
 from speech_text import get_speech_text
 
 logger = Logger()
@@ -217,7 +218,9 @@ class ConnectionsResponseHandler(AbstractRequestHandler):
                     # First check if we have reminder permissions
                     permissions = req_envelope.context.system.user.permissions
 
-                    logger.info(f"ConnectionsResponseHandler Permissions: {permissions}")
+                    logger.info(
+                        f"ConnectionsResponseHandler Permissions: {permissions}"
+                    )
 
                     if not (permissions and permissions.consent_token):
                         logger.error(
