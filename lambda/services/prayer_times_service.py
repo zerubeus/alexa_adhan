@@ -90,8 +90,6 @@ class PrayerService:
         formatted_times = []
         texts = get_speech_text(locale)
 
-        fr_prayer_names = {"Dhuhr": "Dhohr", "Maghrib": "Maghreb", "Isha": "Icha"}
-
         for prayer in PrayerService.PRAYERS:
             if prayer in prayer_times:
                 prayer_time = datetime.datetime.strptime(
@@ -112,17 +110,13 @@ class PrayerService:
                         )
                     )
 
-                # Use French name if locale is French and prayer has a French variation
-                prayer_name = (
-                    fr_prayer_names.get(prayer, prayer) if locale == "fr-FR" else prayer
-                )
                 formatted_times.append(
-                    f"{prayer_name} at {prayer_time.strftime('%I:%M %p')}"
+                    f"{prayer} at {prayer_time.strftime('%I:%M %p')}"
                 )
 
                 notification_time = reminder_time.strftime("%Y-%m-%dT%H:%M:%S")
 
-                reminder_text = texts.PRAYER_TIME_REMINDER.format(prayer_name)
+                reminder_text = texts.PRAYER_TIME_REMINDER.format(prayer)
 
                 trigger = {
                     "type": "SCHEDULED_ABSOLUTE",
