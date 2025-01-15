@@ -16,4 +16,3 @@ class SpeechText:
     )
     PERMISSION_DENIED = "Okay, I won't set up any reminders. You can ask me again anytime if you change your mind."
     PRIER_TIMES = "The prayer times for today are: {}."
-    LOCATION_TEXT = " in {}."

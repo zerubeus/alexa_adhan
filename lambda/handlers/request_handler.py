@@ -129,16 +129,12 @@ class EnableNotificationsIntentHandler(AbstractRequestHandler):
 
             req_envelope = handler_input.request_envelope
             response_builder = handler_input.response_builder
+            alexa_permissions = req_envelope.context.system.user.permissions
 
-            if not (
-                req_envelope.context.system.user.permissions
-                and req_envelope.context.system.user.permissions.consent_token
-            ):
+            if not (alexa_permissions and alexa_permissions.consent_token):
                 logger.warning("Missing location permissions")
                 return (
-                    response_builder.speak(
-                        "To get prayer times, I need access to your location. I've sent a card to help you enable this permission."
-                    )
+                    response_builder.speak(texts.NOTIFY_MISSING_PERMISSIONS)
                     .set_card(
                         AskForPermissionsConsentCard(
                             permissions=["alexa::devices:all:address:full:read"]
