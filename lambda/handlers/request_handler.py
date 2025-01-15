@@ -130,26 +130,42 @@ class EnableNotificationsIntentHandler(AbstractRequestHandler):
             permissions = handler_input.request_envelope.context.system.user.permissions
             if not (permissions and permissions.consent_token):
                 logger.info("Requesting reminder permissions via voice")
-                return (
-                    handler_input.response_builder.speak(texts.ASK_REMINDER_PERMISSION)
-                    .add_directive(
-                        SendRequestDirective(
-                            name="AskFor",
-                            payload={
-                                "@type": "AskForPermissionsConsentRequest",
-                                "@version": "2",
-                                "permissionScopes": [
-                                    {
-                                        "permissionScope": "alexa::alerts:reminders:skill:readwrite",
-                                        "consentLevel": "ACCOUNT",
-                                    }
-                                ],
-                            },
-                            token="user_reminder_permission",
+                try:
+                    return (
+                        handler_input.response_builder.speak(
+                            texts.ASK_REMINDER_PERMISSION
                         )
+                        .add_directive(
+                            SendRequestDirective(
+                                name="AskFor",
+                                payload={
+                                    "@type": "AskForPermissionsConsentRequest",
+                                    "@version": "2",
+                                    "permissionScopes": [
+                                        {
+                                            "permissionScope": "alexa::alerts:reminders:skill:readwrite",
+                                            "consentLevel": "ACCOUNT",
+                                        }
+                                    ],
+                                },
+                                token="user_reminder_permission",
+                            )
+                        )
+                        .response
                     )
-                    .response
-                )
+                except ServiceException:
+                    # Fallback to card if voice permission fails
+                    return (
+                        handler_input.response_builder.speak(
+                            texts.NOTIFY_MISSING_PERMISSIONS
+                        )
+                        .set_card(
+                            AskForPermissionsConsentCard(
+                                permissions=["alexa::alerts:reminders:skill:readwrite"]
+                            )
+                        )
+                        .response
+                    )
 
         except Exception as e:
             logger.exception(f"Error in EnableNotificationsIntentHandler: {e}")

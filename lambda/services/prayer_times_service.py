@@ -13,6 +13,18 @@ from ask_sdk_model.interfaces.audioplayer import (
     PlayBehavior,
 )
 from speech_text import get_speech_text
+from ask_sdk_model.services.reminder_management import (
+    Trigger,
+    TriggerType,
+    Recurrence,
+    RecurrenceFreq,
+    ReminderRequest,
+    AlertInfo,
+    SpokenInfo,
+    SpokenText,
+    PushNotification,
+    PushNotificationStatus,
+)
 
 logger = Logger()
 
@@ -116,25 +128,24 @@ class PrayerService:
 
                 notification_time = reminder_time.strftime("%Y-%m-%dT%H:%M:%S")
 
+                trigger = Trigger(
+                    object_type=TriggerType.SCHEDULED_ABSOLUTE,
+                    scheduled_time=notification_time,
+                    time_zone_id=str(user_timezone),
+                    recurrence=Recurrence(freq=RecurrenceFreq.DAILY, interval=1),
+                )
+
                 reminder_text = texts.PRAYER_TIME_REMINDER.format(prayer)
+                text = SpokenText(locale=locale, text=reminder_text)
+                alert_info = AlertInfo(SpokenInfo([text]))
+                push_notification = PushNotification(PushNotificationStatus.ENABLED)
 
-                trigger = {
-                    "type": "SCHEDULED_ABSOLUTE",
-                    "scheduledTime": notification_time,
-                    "timeZoneId": str(user_timezone),
-                    "recurrence": {"freq": "DAILY", "interval": 1},
-                }
-
-                reminder_request = {
-                    "requestTime": datetime.datetime.now(pytz.UTC).isoformat(),
-                    "trigger": trigger,
-                    "alertInfo": {
-                        "spokenInfo": {
-                            "content": [{"locale": locale, "text": reminder_text}]
-                        }
-                    },
-                    "pushNotification": {"status": "ENABLED"},
-                }
+                reminder_request = ReminderRequest(
+                    request_time=datetime.datetime.now(pytz.UTC).isoformat(),
+                    trigger=trigger,
+                    alert_info=alert_info,
+                    push_notification=push_notification,
+                )
 
                 try:
                     reminder = reminder_service.create_reminder(reminder_request)
