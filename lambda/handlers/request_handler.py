@@ -181,92 +181,6 @@ class EnableNotificationsIntentHandler(AbstractRequestHandler):
             return handler_input.response_builder.speak(texts.ERROR).response
 
 
-class GetPrayerTimesExceptionHandler(AbstractExceptionHandler):
-    def can_handle(self, handler_input, exception):
-        return isinstance(exception, ServiceException)
-
-    def handle(self, handler_input, exception):
-        locale = handler_input.request_envelope.request.locale
-        texts = get_speech_text(locale)
-
-        if exception.status_code == 403:
-            return (
-                handler_input.response_builder.speak(texts.NOTIFY_MISSING_PERMISSIONS)
-                .set_card(AskForPermissionsConsentCard(permissions=permissions))
-                .response
-            )
-
-        return (
-            handler_input.response_builder.speak(texts.LOCATION_FAILURE)
-            .ask(texts.LOCATION_FAILURE)
-            .response
-        )
-
-
-class CatchAllExceptionHandler(AbstractExceptionHandler):
-    def can_handle(self, handler_input, exception):
-        return True
-
-    def handle(self, handler_input, exception):
-        locale = handler_input.request_envelope.request.locale
-        texts = get_speech_text(locale)
-
-        logger.exception(f"Unexpected error: {exception}")
-        return (
-            handler_input.response_builder.speak(texts.ERROR).ask(texts.ERROR).response
-        )
-
-
-class HelpIntentHandler(AbstractRequestHandler):
-    def can_handle(self, handler_input):
-        return is_intent_name("AMAZON.HelpIntent")(handler_input)
-
-    def handle(self, handler_input):
-        locale = handler_input.request_envelope.request.locale
-        texts = get_speech_text(locale)
-
-        return (
-            handler_input.response_builder.speak(texts.HELP_TEXT)
-            .set_card(SimpleCard("Help", texts.HELP_TEXT))
-            .set_should_end_session(False)
-            .response
-        )
-
-
-class CancelAndStopIntentHandler(AbstractRequestHandler):
-    def can_handle(self, handler_input):
-        return is_intent_name("AMAZON.CancelIntent")(handler_input) or is_intent_name(
-            "AMAZON.StopIntent"
-        )(handler_input)
-
-    def handle(self, handler_input):
-        locale = handler_input.request_envelope.request.locale
-        texts = get_speech_text(locale)
-
-        return (
-            handler_input.response_builder.speak(texts.GOODBYE)
-            .set_card(SimpleCard("Goodbye", texts.GOODBYE))
-            .set_should_end_session(True)
-            .response
-        )
-
-
-class FallbackIntentHandler(AbstractRequestHandler):
-    def can_handle(self, handler_input):
-        return is_intent_name("AMAZON.FallbackIntent")(handler_input)
-
-    def handle(self, handler_input):
-        locale = handler_input.request_envelope.request.locale
-        texts = get_speech_text(locale)
-
-        return (
-            handler_input.response_builder.speak(texts.FALL_BACK_TEXT)
-            .set_card(SimpleCard("I didn't understand", texts.FALL_BACK_TEXT))
-            .set_should_end_session(False)
-            .response
-        )
-
-
 class ConnectionsResponseHandler(AbstractRequestHandler):
     def can_handle(self, handler_input):
         return is_request_type("Connections.Response")(handler_input)
@@ -351,3 +265,89 @@ class ConnectionsResponseHandler(AbstractRequestHandler):
                 )
 
         return handler_input.response_builder.speak(texts.ERROR).response
+
+
+class GetPrayerTimesExceptionHandler(AbstractExceptionHandler):
+    def can_handle(self, handler_input, exception):
+        return isinstance(exception, ServiceException)
+
+    def handle(self, handler_input, exception):
+        locale = handler_input.request_envelope.request.locale
+        texts = get_speech_text(locale)
+
+        if exception.status_code == 403:
+            return (
+                handler_input.response_builder.speak(texts.NOTIFY_MISSING_PERMISSIONS)
+                .set_card(AskForPermissionsConsentCard(permissions=permissions))
+                .response
+            )
+
+        return (
+            handler_input.response_builder.speak(texts.LOCATION_FAILURE)
+            .ask(texts.LOCATION_FAILURE)
+            .response
+        )
+
+
+class CatchAllExceptionHandler(AbstractExceptionHandler):
+    def can_handle(self, handler_input, exception):
+        return True
+
+    def handle(self, handler_input, exception):
+        locale = handler_input.request_envelope.request.locale
+        texts = get_speech_text(locale)
+
+        logger.exception(f"Unexpected error: {exception}")
+        return (
+            handler_input.response_builder.speak(texts.ERROR).ask(texts.ERROR).response
+        )
+
+
+class HelpIntentHandler(AbstractRequestHandler):
+    def can_handle(self, handler_input):
+        return is_intent_name("AMAZON.HelpIntent")(handler_input)
+
+    def handle(self, handler_input):
+        locale = handler_input.request_envelope.request.locale
+        texts = get_speech_text(locale)
+
+        return (
+            handler_input.response_builder.speak(texts.HELP_TEXT)
+            .set_card(SimpleCard("Help", texts.HELP_TEXT))
+            .set_should_end_session(False)
+            .response
+        )
+
+
+class CancelAndStopIntentHandler(AbstractRequestHandler):
+    def can_handle(self, handler_input):
+        return is_intent_name("AMAZON.CancelIntent")(handler_input) or is_intent_name(
+            "AMAZON.StopIntent"
+        )(handler_input)
+
+    def handle(self, handler_input):
+        locale = handler_input.request_envelope.request.locale
+        texts = get_speech_text(locale)
+
+        return (
+            handler_input.response_builder.speak(texts.GOODBYE)
+            .set_card(SimpleCard("Goodbye", texts.GOODBYE))
+            .set_should_end_session(True)
+            .response
+        )
+
+
+class FallbackIntentHandler(AbstractRequestHandler):
+    def can_handle(self, handler_input):
+        return is_intent_name("AMAZON.FallbackIntent")(handler_input)
+
+    def handle(self, handler_input):
+        locale = handler_input.request_envelope.request.locale
+        texts = get_speech_text(locale)
+
+        return (
+            handler_input.response_builder.speak(texts.FALL_BACK_TEXT)
+            .set_card(SimpleCard("I didn't understand", texts.FALL_BACK_TEXT))
+            .set_should_end_session(False)
+            .response
+        )
