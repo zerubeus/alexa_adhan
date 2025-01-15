@@ -52,11 +52,9 @@ class GetPrayerTimesIntentHandler(AbstractRequestHandler):
 
             req_envelope = handler_input.request_envelope
             response_builder = handler_input.response_builder
+            alexa_permissions = req_envelope.context.system.user.permissions
 
-            if not (
-                req_envelope.context.system.user.permissions
-                and req_envelope.context.system.user.permissions.consent_token
-            ):
+            if not (alexa_permissions and alexa_permissions.consent_token):
                 logger.warning("Missing permissions for device address")
                 return (
                     response_builder.speak(texts.NOTIFY_MISSING_PERMISSIONS)
@@ -127,8 +125,9 @@ class EnableNotificationsIntentHandler(AbstractRequestHandler):
             locale = handler_input.request_envelope.request.locale
             texts = get_speech_text(locale)
 
-            permissions = handler_input.request_envelope.context.system.user.permissions
-            if not (permissions and permissions.consent_token):
+            alexa_permissions = handler_input.request_envelope.context.system.user.permissions
+
+            if not (alexa_permissions and alexa_permissions.consent_token):
                 logger.info("Requesting reminder permissions via voice")
                 try:
                     return (
@@ -153,7 +152,14 @@ class EnableNotificationsIntentHandler(AbstractRequestHandler):
                         )
                         .response
                     )
-                except ServiceException:
+                except ServiceException as se:
+                    logger.error(
+                        "ServiceException while requesting permissions",
+                        extra={
+                            "error": str(se),
+                            "status_code": getattr(se, "status_code", None),
+                        },
+                    )
                     # Fallback to card if voice permission fails
                     return (
                         handler_input.response_builder.speak(
@@ -168,7 +174,14 @@ class EnableNotificationsIntentHandler(AbstractRequestHandler):
                     )
 
         except Exception as e:
-            logger.exception(f"Error in EnableNotificationsIntentHandler: {e}")
+            logger.exception(
+                "Error in EnableNotificationsIntentHandler",
+                extra={
+                    "error_type": type(e).__name__,
+                    "error": str(e),
+                    "traceback": True,
+                },
+            )
             return handler_input.response_builder.speak(texts.ERROR).response
 
 
@@ -183,11 +196,13 @@ class ConnectionsResponseHandler(AbstractRequestHandler):
         logger.info(
             "Handling Connections.Response",
             extra={
+                "request_id": handler_input.request_envelope.request.request_id,
                 "request_name": request.name,
                 "status_code": request.status.code,
                 "payload_status": (
                     request.payload.get("status") if request.payload else None
                 ),
+                "locale": locale,
             },
         )
 
@@ -203,7 +218,7 @@ class ConnectionsResponseHandler(AbstractRequestHandler):
                         logger.error(
                             "Missing reminder permissions after user accepted",
                             extra={
-                                "permissions": permissions,
+                                "permissions": str(permissions),
                                 "has_token": (
                                     bool(permissions.consent_token)
                                     if permissions
@@ -229,7 +244,7 @@ class ConnectionsResponseHandler(AbstractRequestHandler):
                         logger.error(
                             "Missing location permissions",
                             extra={
-                                "permissions": alexa_permissions,
+                                "permissions": str(alexa_permissions),
                                 "has_token": (
                                     bool(alexa_permissions.consent_token)
                                     if alexa_permissions
@@ -256,7 +271,7 @@ class ConnectionsResponseHandler(AbstractRequestHandler):
                     if not success:
                         logger.error(
                             "Failed to get device location",
-                            extra={"location_result": location_result},
+                            extra={"location_result": str(location_result)},
                         )
                         return location_result
 
@@ -281,7 +296,11 @@ class ConnectionsResponseHandler(AbstractRequestHandler):
                     except Exception as e:
                         logger.error(
                             "Failed to get user timezone",
-                            extra={"error": str(e), "device_id": device_id},
+                            extra={
+                                "error_type": type(e).__name__,
+                                "error": str(e),
+                                "device_id": device_id,
+                            },
                         )
                         return response_builder.speak(texts.ERROR).response
 
@@ -289,6 +308,7 @@ class ConnectionsResponseHandler(AbstractRequestHandler):
                         reminder_service = (
                             handler_input.service_client_factory.get_reminder_management_service()
                         )
+                        logger.info("Setting up prayer reminders")
                         reminders, formatted_times = (
                             PrayerService.setup_prayer_reminders(
                                 prayer_times,
@@ -310,6 +330,8 @@ class ConnectionsResponseHandler(AbstractRequestHandler):
                             extra={
                                 "error": str(e),
                                 "status_code": getattr(e, "status_code", None),
+                                "error_type": type(e).__name__,
+                                "traceback": True,
                             },
                         )
                         if e.status_code == 401:
@@ -345,7 +367,11 @@ class ConnectionsResponseHandler(AbstractRequestHandler):
                 except Exception as e:
                     logger.exception(
                         "Unexpected error in ConnectionsResponseHandler",
-                        extra={"error_type": type(e).__name__, "error": str(e)},
+                        extra={
+                            "error_type": type(e).__name__,
+                            "error": str(e),
+                            "traceback": True,
+                        },
                     )
                     return handler_input.response_builder.speak(texts.ERROR).response
             else:

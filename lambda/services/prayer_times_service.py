@@ -108,6 +108,7 @@ class PrayerService:
                 "num_prayers": len(PrayerService.PRAYERS),
                 "timezone": str(user_timezone),
                 "locale": locale,
+                "prayer_times": prayer_times,
             },
         )
 
@@ -143,6 +144,8 @@ class PrayerService:
                             "prayer": prayer,
                             "notification_time": notification_time,
                             "timezone": str(user_timezone),
+                            "reminder_time": str(reminder_time),
+                            "current_time": str(now),
                         },
                     )
 
@@ -166,6 +169,14 @@ class PrayerService:
                     )
 
                     try:
+                        logger.info(
+                            f"Creating reminder for {prayer}",
+                            extra={
+                                "prayer": prayer,
+                                "reminder_request": str(reminder_request),
+                                "trigger_time": notification_time,
+                            },
+                        )
                         reminder = reminder_service.create_reminder(reminder_request)
                         reminders.append(reminder)
                         logger.info(
@@ -173,6 +184,7 @@ class PrayerService:
                             extra={
                                 "prayer": prayer,
                                 "reminder_id": getattr(reminder, "alert_token", None),
+                                "reminder_status": getattr(reminder, "status", None),
                             },
                         )
                     except ServiceException as e:
@@ -183,7 +195,8 @@ class PrayerService:
                                     "prayer": prayer,
                                     "error": str(e),
                                     "status_code": e.status_code,
-                                    "request": reminder_request,
+                                    "request": str(reminder_request),
+                                    "error_type": type(e).__name__,
                                 },
                             )
                             raise
@@ -194,7 +207,8 @@ class PrayerService:
                                     "prayer": prayer,
                                     "error": str(e),
                                     "status_code": e.status_code,
-                                    "request": reminder_request,
+                                    "request": str(reminder_request),
+                                    "error_type": type(e).__name__,
                                 },
                             )
                             raise
@@ -205,9 +219,12 @@ class PrayerService:
                                     "prayer": prayer,
                                     "error": str(e),
                                     "status_code": getattr(e, "status_code", None),
-                                    "request": reminder_request,
+                                    "request": str(reminder_request),
+                                    "error_type": type(e).__name__,
+                                    "traceback": True,
                                 },
                             )
+                            raise
                 except Exception as e:
                     logger.error(
                         f"Error processing reminder for {prayer}",
@@ -215,6 +232,7 @@ class PrayerService:
                             "prayer": prayer,
                             "error": str(e),
                             "error_type": type(e).__name__,
+                            "traceback": True,
                         },
                     )
                     raise
