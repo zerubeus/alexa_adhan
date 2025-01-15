@@ -125,7 +125,9 @@ class EnableNotificationsIntentHandler(AbstractRequestHandler):
             locale = handler_input.request_envelope.request.locale
             texts = get_speech_text(locale)
 
-            alexa_permissions = handler_input.request_envelope.context.system.user.permissions
+            alexa_permissions = (
+                handler_input.request_envelope.context.system.user.permissions
+            )
 
             if not (alexa_permissions and alexa_permissions.consent_token):
                 logger.info("Requesting reminder permissions via voice")
@@ -214,6 +216,9 @@ class ConnectionsResponseHandler(AbstractRequestHandler):
 
                     # First check if we have reminder permissions
                     permissions = req_envelope.context.system.user.permissions
+
+                    logger.info(f"ConnectionsResponseHandler Permissions: {permissions}")
+
                     if not (permissions and permissions.consent_token):
                         logger.error(
                             "Missing reminder permissions after user accepted",

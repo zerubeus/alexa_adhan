@@ -138,6 +138,7 @@ class PrayerService:
                     )
 
                     notification_time = reminder_time.strftime("%Y-%m-%dT%H:%M:%S")
+
                     logger.info(
                         f"Setting up reminder for {prayer}",
                         extra={
@@ -177,8 +178,10 @@ class PrayerService:
                                 "trigger_time": notification_time,
                             },
                         )
+
                         reminder = reminder_service.create_reminder(reminder_request)
                         reminders.append(reminder)
+
                         logger.info(
                             f"Successfully created reminder for {prayer}",
                             extra={
