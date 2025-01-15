@@ -180,16 +180,63 @@ class ConnectionsResponseHandler(AbstractRequestHandler):
         locale = handler_input.request_envelope.request.locale
         texts = get_speech_text(locale)
         request = handler_input.request_envelope.request
+        logger.info(
+            "Handling Connections.Response",
+            extra={
+                "request_name": request.name,
+                "status_code": request.status.code,
+                "payload_status": (
+                    request.payload.get("status") if request.payload else None
+                ),
+            },
+        )
 
         if request.name == "AskFor" and request.status.code == "200":
             if request.payload.get("status") == "ACCEPTED":
                 try:
                     req_envelope = handler_input.request_envelope
                     response_builder = handler_input.response_builder
-                    alexa_permissions = req_envelope.context.system.user.permissions
 
+                    # First check if we have reminder permissions
+                    permissions = req_envelope.context.system.user.permissions
+                    if not (permissions and permissions.consent_token):
+                        logger.error(
+                            "Missing reminder permissions after user accepted",
+                            extra={
+                                "permissions": permissions,
+                                "has_token": (
+                                    bool(permissions.consent_token)
+                                    if permissions
+                                    else False
+                                ),
+                            },
+                        )
+                        return (
+                            response_builder.speak(texts.NOTIFY_MISSING_PERMISSIONS)
+                            .set_card(
+                                AskForPermissionsConsentCard(
+                                    permissions=[
+                                        "alexa::alerts:reminders:skill:readwrite"
+                                    ]
+                                )
+                            )
+                            .response
+                        )
+
+                    # Then check location permissions
+                    alexa_permissions = req_envelope.context.system.user.permissions
                     if not (alexa_permissions and alexa_permissions.consent_token):
-                        logger.warning("Missing location permissions")
+                        logger.error(
+                            "Missing location permissions",
+                            extra={
+                                "permissions": alexa_permissions,
+                                "has_token": (
+                                    bool(alexa_permissions.consent_token)
+                                    if alexa_permissions
+                                    else False
+                                ),
+                            },
+                        )
                         return (
                             response_builder.speak(texts.NOTIFY_MISSING_PERMISSIONS)
                             .set_card(
@@ -207,9 +254,17 @@ class ConnectionsResponseHandler(AbstractRequestHandler):
                     )
 
                     if not success:
+                        logger.error(
+                            "Failed to get device location",
+                            extra={"location_result": location_result},
+                        )
                         return location_result
 
                     latitude, longitude = location_result
+                    logger.info(
+                        "Successfully got device location",
+                        extra={"latitude": latitude, "longitude": longitude},
+                    )
 
                     prayer_times = PrayerService.get_prayer_times(latitude, longitude)
                     if not prayer_times:
@@ -217,18 +272,63 @@ class ConnectionsResponseHandler(AbstractRequestHandler):
                         return response_builder.speak(texts.ERROR).response
 
                     device_id = req_envelope.context.system.device.device_id
-                    timezone = handler_input.service_client_factory.get_ups_service().get_system_time_zone(
-                        device_id
-                    )
-                    user_timezone = pytz.timezone(timezone)
+                    try:
+                        timezone = handler_input.service_client_factory.get_ups_service().get_system_time_zone(
+                            device_id
+                        )
+                        user_timezone = pytz.timezone(timezone)
+                        logger.info("Got user timezone", extra={"timezone": timezone})
+                    except Exception as e:
+                        logger.error(
+                            "Failed to get user timezone",
+                            extra={"error": str(e), "device_id": device_id},
+                        )
+                        return response_builder.speak(texts.ERROR).response
 
-                    reminder_service = (
-                        handler_input.service_client_factory.get_reminder_management_service()
-                    )
-
-                    reminders, formatted_times = PrayerService.setup_prayer_reminders(
-                        prayer_times, reminder_service, user_timezone, locale=locale
-                    )
+                    try:
+                        reminder_service = (
+                            handler_input.service_client_factory.get_reminder_management_service()
+                        )
+                        reminders, formatted_times = (
+                            PrayerService.setup_prayer_reminders(
+                                prayer_times,
+                                reminder_service,
+                                user_timezone,
+                                locale=locale,
+                            )
+                        )
+                        logger.info(
+                            "Successfully set up reminders",
+                            extra={
+                                "num_reminders": len(reminders),
+                                "formatted_times": formatted_times,
+                            },
+                        )
+                    except ServiceException as e:
+                        logger.error(
+                            "Failed to set up reminders",
+                            extra={
+                                "error": str(e),
+                                "status_code": getattr(e, "status_code", None),
+                            },
+                        )
+                        if e.status_code == 401:
+                            return (
+                                response_builder.speak(texts.NOTIFY_MISSING_PERMISSIONS)
+                                .set_card(
+                                    AskForPermissionsConsentCard(
+                                        permissions=[
+                                            "alexa::alerts:reminders:skill:readwrite"
+                                        ]
+                                    )
+                                )
+                                .response
+                            )
+                        elif e.status_code == 403:
+                            return response_builder.speak(
+                                texts.MAX_REMINDERS_ERROR
+                            ).response
+                        return response_builder.speak(texts.ERROR).response
 
                     confirmation_text = texts.REMINDER_SETUP_CONFIRMATION.format(
                         formatted_times
@@ -242,30 +342,24 @@ class ConnectionsResponseHandler(AbstractRequestHandler):
                         .response
                     )
 
-                except ServiceException as se:
-                    if se.status_code == 403:  # Max reminders limit reached
-                        return response_builder.speak(
-                            texts.MAX_REMINDERS_ERROR
-                        ).response
-                    logger.error(
-                        "ServiceException in ConnectionsResponseHandler",
-                        extra={
-                            "error_type": type(se).__name__,
-                            "error_message": str(se),
-                            "status_code": getattr(se, "status_code", None),
-                        },
-                    )
-                    return response_builder.speak(texts.ERROR).response
                 except Exception as e:
-                    logger.exception(f"Error in ConnectionsResponseHandler: {e}")
+                    logger.exception(
+                        "Unexpected error in ConnectionsResponseHandler",
+                        extra={"error_type": type(e).__name__, "error": str(e)},
+                    )
                     return handler_input.response_builder.speak(texts.ERROR).response
             else:
+                logger.info("User denied permission request")
                 return (
                     handler_input.response_builder.speak(texts.PERMISSION_DENIED)
                     .set_should_end_session(True)
                     .response
                 )
 
+        logger.error(
+            "Invalid request",
+            extra={"request_name": request.name, "status_code": request.status.code},
+        )
         return handler_input.response_builder.speak(texts.ERROR).response
 
 
