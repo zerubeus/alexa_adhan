@@ -12,6 +12,7 @@ from ask_sdk_model.interfaces.audioplayer import (
     Stream,
     PlayBehavior,
 )
+from speech_text import get_speech_text
 
 logger = Logger()
 
@@ -83,9 +84,13 @@ class PrayerService:
         prayer_times: dict,
         reminder_service,
         user_timezone: pytz.timezone,
+        locale: str = "en-US",
     ) -> Tuple[List[dict], str]:
         reminders = []
         formatted_times = []
+        texts = get_speech_text(locale)
+
+        fr_prayer_names = {"Dhuhr": "Dhohr", "Maghrib": "Maghreb", "Isha": "Icha"}
 
         for prayer in PrayerService.PRAYERS:
             if prayer in prayer_times:
@@ -100,25 +105,30 @@ class PrayerService:
                     datetime.datetime.combine(today, prayer_time)
                 )
 
-                # Set reminder 10 minutes before prayer time
-                reminder_time = reminder_time - datetime.timedelta(minutes=10)
-
                 if reminder_time < now:
                     reminder_time = user_timezone.localize(
                         datetime.datetime.combine(
                             today + datetime.timedelta(days=1), prayer_time
                         )
-                    ) - datetime.timedelta(minutes=10)
+                    )
 
-                formatted_times.append(
-                    f"{prayer} at {prayer_time.strftime('%I:%M %p')}"
+                # Use French name if locale is French and prayer has a French variation
+                prayer_name = (
+                    fr_prayer_names.get(prayer, prayer) if locale == "fr-FR" else prayer
                 )
+                formatted_times.append(
+                    f"{prayer_name} at {prayer_time.strftime('%I:%M %p')}"
+                )
+
+                notification_time = reminder_time.strftime("%Y-%m-%dT%H:%M:%S")
+
+                reminder_text = texts.PRAYER_TIME_REMINDER.format(prayer_name)
 
                 trigger = {
                     "type": "SCHEDULED_ABSOLUTE",
-                    "scheduledTime": reminder_time.isoformat(),
-                    "recurrence": {"freq": "DAILY"},
+                    "scheduledTime": notification_time,
                     "timeZoneId": str(user_timezone),
+                    "recurrence": {"freq": "DAILY", "interval": 1},
                 }
 
                 reminder_request = {
@@ -126,12 +136,7 @@ class PrayerService:
                     "trigger": trigger,
                     "alertInfo": {
                         "spokenInfo": {
-                            "content": [
-                                {
-                                    "locale": "en-US",
-                                    "text": f"Time for {prayer} prayer in 10 minutes",
-                                }
-                            ]
+                            "content": [{"locale": locale, "text": reminder_text}]
                         }
                     },
                     "pushNotification": {"status": "ENABLED"},
@@ -140,13 +145,28 @@ class PrayerService:
                 try:
                     reminder = reminder_service.create_reminder(reminder_request)
                     reminders.append(reminder)
+                    logger.info(f"Successfully created reminder for {prayer}")
                 except ServiceException as e:
-                    if e.status_code == 403:  # Max reminders limit reached
+                    if e.status_code == 401:
+                        logger.error(
+                            f"Unauthorized: Missing permissions for creating reminders for {prayer}",
+                            extra={"error": str(e), "status_code": e.status_code},
+                        )
                         raise
-                    logger.error(
-                        f"Failed to create reminder for {prayer}",
-                        extra={"error": str(e), "status_code": e.status_code},
-                    )
+                    elif e.status_code == 403:  # Max reminders limit reached
+                        logger.error(
+                            f"Forbidden: Max reminders limit reached for {prayer}",
+                            extra={"error": str(e), "status_code": e.status_code},
+                        )
+                        raise
+                    else:
+                        logger.error(
+                            f"Failed to create reminder for {prayer}",
+                            extra={
+                                "error": str(e),
+                                "status_code": getattr(e, "status_code", None),
+                            },
+                        )
 
         return reminders, ", ".join(formatted_times)
 

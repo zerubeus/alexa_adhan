@@ -127,50 +127,29 @@ class EnableNotificationsIntentHandler(AbstractRequestHandler):
             locale = handler_input.request_envelope.request.locale
             texts = get_speech_text(locale)
 
-            req_envelope = handler_input.request_envelope
-            response_builder = handler_input.response_builder
-            alexa_permissions = req_envelope.context.system.user.permissions
-
-            if not (alexa_permissions and alexa_permissions.consent_token):
-                logger.warning("Missing location permissions")
+            permissions = handler_input.request_envelope.context.system.user.permissions
+            if not (permissions and permissions.consent_token):
+                logger.info("Requesting reminder permissions via voice")
                 return (
-                    response_builder.speak(texts.NOTIFY_MISSING_PERMISSIONS)
-                    .set_card(
-                        AskForPermissionsConsentCard(
-                            permissions=["alexa::devices:all:address:full:read"]
+                    handler_input.response_builder.speak(texts.ASK_REMINDER_PERMISSION)
+                    .add_directive(
+                        SendRequestDirective(
+                            name="AskFor",
+                            payload={
+                                "@type": "AskForPermissionsConsentRequest",
+                                "@version": "2",
+                                "permissionScopes": [
+                                    {
+                                        "permissionScope": "alexa::alerts:reminders:skill:readwrite",
+                                        "consentLevel": "ACCOUNT",
+                                    }
+                                ],
+                            },
+                            token="user_reminder_permission",
                         )
                     )
                     .response
                 )
-
-            success, location_result = get_device_location(
-                req_envelope, response_builder, handler_input.service_client_factory
-            )
-
-            if not success:
-                return location_result
-
-            logger.info("Requesting reminder permissions via voice")
-            return (
-                response_builder.speak(texts.ASK_REMINDER_PERMISSION)
-                .add_directive(
-                    SendRequestDirective(
-                        name="AskFor",
-                        payload={
-                            "@type": "AskForPermissionsConsentRequest",
-                            "@version": "2",
-                            "permissionScopes": [
-                                {
-                                    "permissionScope": "alexa::alerts:reminders:skill:readwrite",
-                                    "consentLevel": "ACCOUNT",
-                                }
-                            ],
-                        },
-                        token="user_reminder_permission",
-                    )
-                )
-                .response
-            )
 
         except Exception as e:
             logger.exception(f"Error in EnableNotificationsIntentHandler: {e}")
@@ -191,6 +170,19 @@ class ConnectionsResponseHandler(AbstractRequestHandler):
                 try:
                     req_envelope = handler_input.request_envelope
                     response_builder = handler_input.response_builder
+                    alexa_permissions = req_envelope.context.system.user.permissions
+
+                    if not (alexa_permissions and alexa_permissions.consent_token):
+                        logger.warning("Missing location permissions")
+                        return (
+                            response_builder.speak(texts.NOTIFY_MISSING_PERMISSIONS)
+                            .set_card(
+                                AskForPermissionsConsentCard(
+                                    permissions=["alexa::devices:all:address:full:read"]
+                                )
+                            )
+                            .response
+                        )
 
                     success, location_result = get_device_location(
                         req_envelope,
@@ -219,9 +211,7 @@ class ConnectionsResponseHandler(AbstractRequestHandler):
                     )
 
                     reminders, formatted_times = PrayerService.setup_prayer_reminders(
-                        prayer_times,
-                        reminder_service,
-                        user_timezone,
+                        prayer_times, reminder_service, user_timezone, locale=locale
                     )
 
                     confirmation_text = texts.REMINDER_SETUP_CONFIRMATION.format(

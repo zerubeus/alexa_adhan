@@ -9,9 +9,12 @@ class SpeechText:
     FALL_BACK_TEXT = "Désolé, je n'ai pas compris. Veuillez réessayer."
     NOTIFICATION_SETUP_TEXT = "J'ai configuré les notifications pour les heures de prière. Vous recevrez une notification avant chaque prière."
     GOODBYE = "Au revoir!"
-    ASK_REMINDER_PERMISSION = "Voulez-vous que je configure des rappels quotidiens pour les heures de prière? Je vous notifierai 10 minutes avant chaque prière."
+    ASK_REMINDER_PERMISSION = (
+        "Voulez-vous que je configure des rappels quotidiens pour les heures de prière?"
+    )
     MAX_REMINDERS_ERROR = "Désolé, vous avez atteint le nombre maximum de rappels. Veuillez supprimer des rappels existants et réessayer."
     REMINDER_SETUP_CONFIRMATION = "Je vais configurer des rappels quotidiens pour les heures de prière suivantes : {}"
     PERMISSION_DENIED = "D'accord, je ne configurerai pas de rappels. Vous pouvez me le redemander à tout moment si vous changez d'avis."
     PRIER_TIMES = "Les heures de prière pour aujourd'hui sont : {}."
     LOCATION_TEXT = " à {}."
+    PRAYER_TIME_REMINDER = "L'heure de la prière {} est arrivée"
