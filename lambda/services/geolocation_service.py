@@ -4,6 +4,8 @@ import requests
 from ask_sdk_model.services import ServiceException
 from ask_sdk_model.ui import AskForPermissionsConsentCard
 from aws_lambda_powertools import Logger
+
+from auth.auth_permissions import permissions
 from speech_text import get_speech_text
 
 logger = Logger()
@@ -20,7 +22,8 @@ def get_city_name(lat: float, lon: float) -> Optional[str]:
                 "town"
             )
         return None
-    except Exception:
+    except Exception as e:
+        logger.error("Error getting city name", extra={"error_message": str(e)})
         return None
 
 
@@ -109,7 +112,7 @@ def get_device_location(
                 response_builder.speak(texts.NOTIFY_MISSING_PERMISSIONS)
                 .set_card(
                     AskForPermissionsConsentCard(
-                        permissions=["alexa::devices:all:geolocation:read"]
+                        permissions=permissions["geolocation_r"]
                     )
                 )
                 .response,
@@ -140,7 +143,7 @@ def get_device_location(
                         ),
                     },
                 )
-                return (False, response_builder.speak(texts.NO_LOCATION).response)
+                return False, response_builder.speak(texts.NO_LOCATION).response
 
             latitude = geolocation.coordinate.latitude_in_degrees
             longitude = geolocation.coordinate.longitude_in_degrees
@@ -150,7 +153,7 @@ def get_device_location(
                 extra={"latitude": latitude, "longitude": longitude},
             )
 
-            return (True, (latitude, longitude))
+            return True, (latitude, longitude)
 
         except ServiceException as se:
             logger.error(
@@ -161,20 +164,19 @@ def get_device_location(
                     "status_code": getattr(se, "status_code", None),
                 },
             )
-            return (False, response_builder.speak(texts.LOCATION_FAILURE).response)
+            return False, response_builder.speak(texts.LOCATION_FAILURE).response
         except Exception as e:
             logger.error(
                 "Unexpected error in get_device_location",
                 extra={"error_type": type(e).__name__, "error_message": str(e)},
             )
-            return (False, response_builder.speak(texts.LOCATION_FAILURE).response)
+            return False, response_builder.speak(texts.LOCATION_FAILURE).response
     else:
         # Stationary device flow - use Device Settings API
         if not service_client_factory:
             logger.warning("Service client factory not provided for stationary device")
-            return (False, response_builder.speak(texts.LOCATION_FAILURE).response)
+            return False, response_builder.speak(texts.LOCATION_FAILURE).response
 
-        # Check for API access token
         api_access_token = req_envelope.context.system.api_access_token
         if not api_access_token:
             logger.warning("No API access token available")
@@ -183,7 +185,7 @@ def get_device_location(
                 response_builder.speak(texts.NOTIFY_MISSING_PERMISSIONS)
                 .set_card(
                     AskForPermissionsConsentCard(
-                        permissions=["alexa::devices:all:address:full:read"]
+                        permissions=permissions["full_address_r"]
                     )
                 )
                 .response,
@@ -202,6 +204,7 @@ def get_device_location(
                     "postalCode": addr.postalCode,
                     "countryCode": addr.countryCode,
                 }
+
             except ServiceException:
                 addr_response = device_addr_client.get_country_and_postal_code(
                     device_id
@@ -223,10 +226,10 @@ def get_device_location(
                     "Successfully converted address to coordinates",
                     extra={"latitude": latitude, "longitude": longitude},
                 )
-                return (True, coordinates)
+                return True, coordinates
 
             logger.warning("Failed to convert address to coordinates")
-            return (False, response_builder.speak(texts.LOCATION_FAILURE).response)
+            return False, response_builder.speak(texts.LOCATION_FAILURE).response
 
         except ServiceException as se:
             logger.error(
@@ -243,15 +246,15 @@ def get_device_location(
                     response_builder.speak(texts.NOTIFY_MISSING_PERMISSIONS)
                     .set_card(
                         AskForPermissionsConsentCard(
-                            permissions=["alexa::devices:all:address:full:read"]
+                            permissions=permissions["full_address_r"]
                         )
                     )
                     .response,
                 )
-            return (False, response_builder.speak(texts.LOCATION_FAILURE).response)
+            return False, response_builder.speak(texts.LOCATION_FAILURE).response
         except Exception as e:
             logger.error(
                 "Unexpected error in Device Settings API",
                 extra={"error_type": type(e).__name__, "error_message": str(e)},
             )
-            return (False, response_builder.speak(texts.LOCATION_FAILURE).response)
+            return False, response_builder.speak(texts.LOCATION_FAILURE).response

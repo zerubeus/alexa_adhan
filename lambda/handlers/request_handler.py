@@ -61,7 +61,7 @@ class GetPrayerTimesIntentHandler(AbstractRequestHandler):
                     response_builder.speak(texts.NOTIFY_MISSING_PERMISSIONS)
                     .set_card(
                         AskForPermissionsConsentCard(
-                            permissions=["alexa::devices:all:address:full:read"]
+                            permissions=permissions["full_address_r"]
                         )
                     )
                     .response
@@ -105,7 +105,7 @@ class GetPrayerTimesIntentHandler(AbstractRequestHandler):
                     response_builder.speak(texts.NOTIFY_MISSING_PERMISSIONS)
                     .set_card(
                         AskForPermissionsConsentCard(
-                            permissions=["alexa::devices:all:address:full:read"]
+                            permissions=permissions["full_address_r"]
                         )
                     )
                     .response
@@ -145,7 +145,9 @@ class EnableNotificationsIntentHandler(AbstractRequestHandler):
                                     "@version": "2",
                                     "permissionScopes": [
                                         {
-                                            "permissionScope": "alexa::alerts:reminders:skill:readwrite",
+                                            "permissionScope": permissions[
+                                                "reminder_rw"
+                                            ],
                                             "consentLevel": "ACCOUNT",
                                         }
                                     ],
@@ -170,7 +172,7 @@ class EnableNotificationsIntentHandler(AbstractRequestHandler):
                         )
                         .set_card(
                             AskForPermissionsConsentCard(
-                                permissions=["alexa::alerts:reminders:skill:readwrite"]
+                                permissions=permissions["reminder_rw"]
                             )
                         )
                         .response
@@ -196,6 +198,7 @@ class ConnectionsResponseHandler(AbstractRequestHandler):
         locale = handler_input.request_envelope.request.locale
         texts = get_speech_text(locale)
         request = handler_input.request_envelope.request
+
         logger.info(
             "Handling Connections.Response",
             extra={
@@ -215,39 +218,33 @@ class ConnectionsResponseHandler(AbstractRequestHandler):
                     req_envelope = handler_input.request_envelope
                     response_builder = handler_input.response_builder
 
-                    # First check if we have reminder permissions
-                    permissions = req_envelope.context.system.user.permissions
+                    alexa_permissions = req_envelope.context.system.user.permissions
 
                     logger.info(
-                        f"ConnectionsResponseHandler Permissions: {permissions}"
+                        f"ConnectionsResponseHandler Permissions: {alexa_permissions}"
                     )
 
-                    if not (permissions and permissions.consent_token):
+                    if not (alexa_permissions and alexa_permissions.consent_token):
                         logger.error(
                             "Missing reminder permissions after user accepted",
                             extra={
-                                "permissions": str(permissions),
-                                "has_token": (
-                                    bool(permissions.consent_token)
-                                    if permissions
-                                    else False
-                                ),
+                                "permissions": str(alexa_permissions),
+                                "has_token": bool(alexa_permissions.consent_token),
                             },
                         )
+
                         return (
                             response_builder.speak(texts.NOTIFY_MISSING_PERMISSIONS)
                             .set_card(
                                 AskForPermissionsConsentCard(
-                                    permissions=[
-                                        "alexa::alerts:reminders:skill:readwrite"
-                                    ]
+                                    permissions=[permissions["reminder_rw"]]
                                 )
                             )
                             .response
                         )
 
-                    # Then check location permissions
                     alexa_permissions = req_envelope.context.system.user.permissions
+
                     if not (alexa_permissions and alexa_permissions.consent_token):
                         logger.error(
                             "Missing location permissions",
@@ -264,7 +261,7 @@ class ConnectionsResponseHandler(AbstractRequestHandler):
                             response_builder.speak(texts.NOTIFY_MISSING_PERMISSIONS)
                             .set_card(
                                 AskForPermissionsConsentCard(
-                                    permissions=["alexa::devices:all:address:full:read"]
+                                    permissions=permissions["full_address_r"]
                                 )
                             )
                             .response
@@ -342,14 +339,13 @@ class ConnectionsResponseHandler(AbstractRequestHandler):
                                 "traceback": True,
                             },
                         )
+
                         if e.status_code == 401:
                             return (
                                 response_builder.speak(texts.NOTIFY_MISSING_PERMISSIONS)
                                 .set_card(
                                     AskForPermissionsConsentCard(
-                                        permissions=[
-                                            "alexa::alerts:reminders:skill:readwrite"
-                                        ]
+                                        permissions=permissions["reminder_rw"]
                                     )
                                 )
                                 .response
