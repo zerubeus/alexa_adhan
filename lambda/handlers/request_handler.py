@@ -177,6 +177,18 @@ class EnableNotificationsIntentHandler(AbstractRequestHandler):
                         )
                         .response
                     )
+            else:
+                logger.info(
+                    "EnableNotificationsIntentHandler Requesting reminder permissions already granted"
+                )
+                return (
+                    handler_input.response_builder.speak(
+                        "You already have reminders permission! "
+                        "Would you like to set up a daily reminder?"
+                    )
+                    .ask("Would you like to set up a daily reminder?")
+                    .response
+                )
 
         except Exception as e:
             logger.exception(
