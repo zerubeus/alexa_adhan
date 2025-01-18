@@ -1,4 +1,4 @@
-# Alexa Adhan
+# Alexa Adhan (Muslim prayer reminder)
 
 <p align="center">
   <img src="skill-package/assets/en-US_largeIcon.png" alt="Alexa Adhan" width="512">
