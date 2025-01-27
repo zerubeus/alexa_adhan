@@ -9,7 +9,7 @@ create-skill:
 			--manifest ./skill-package/skill.json
 
 build-lambda:
-	sam build --use-container
+	cd lambda && poetry install --no-root && cd .. && sam build --use-container
 
 deploy-lambda:
 	$(eval SKILL_ID := $(shell jq -r '.profiles.default.skillId' .ask/ask-states.json))

@@ -12,6 +12,10 @@ Alexa Adhan is an Alexa skill that provides prayer call notifications for Muslim
 
 The Alexa Adhan skill is built using the Alexa Skills Kit (ASK) and AWS Lambda. The skill uses the Aladhan API to fetch prayer times based on the user's location. The skill also uses the Alexa Reminders API to set notifications for prayer times. The project is structured with a Lambda function that handles the skill's logic and a set of services for fetching prayer times and managing geolocation.
 
+## Dependency Management
+
+This project uses Poetry for dependency management. To install dependencies, run `poetry install`. To add a new dependency, run `poetry add <dependency-name>`.
+
 ## Supported Languages
 
 The Alexa Adhan skill is available in:
