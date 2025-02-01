@@ -18,3 +18,5 @@ class SpeechText:
     PRIER_TIMES = "The prayer times for today are: {}."
     PRAYER_TIME_REMINDER = "Time for {} prayer"
     LOCATION_TEXT = " in {}."
+    ASK_REMINDER_PERMISSION = "Would you like me to set up daily prayer time reminders?"
+    REMINDER_PERMISSION_ALREADY_GRANTED = "You already have reminders permission! Would you like to set up a daily reminder?"

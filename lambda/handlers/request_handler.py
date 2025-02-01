@@ -183,10 +183,9 @@ class EnableNotificationsIntentHandler(AbstractRequestHandler):
                 )
                 return (
                     handler_input.response_builder.speak(
-                        "You already have reminders permission! "
-                        "Would you like to set up a daily reminder?"
+                        texts.REMINDER_PERMISSION_ALREADY_GRANTED
                     )
-                    .ask("Would you like to set up a daily reminder?")
+                    .ask(texts.ASK_REMINDER_PERMISSION)
                     .response
                 )
 
