@@ -307,6 +307,7 @@ class ConnectionsResponseHandler(AbstractRequestHandler):
                         timezone = handler_input.service_client_factory.get_ups_service().get_system_time_zone(
                             device_id
                         )
+
                         user_timezone = pytz.timezone(timezone)
                         logger.info("Got user timezone", extra={"timezone": timezone})
                     except Exception as e:
@@ -324,7 +325,9 @@ class ConnectionsResponseHandler(AbstractRequestHandler):
                         reminder_service = (
                             handler_input.service_client_factory.get_reminder_management_service()
                         )
+
                         logger.info("Setting up prayer reminders")
+
                         reminders, formatted_times = (
                             PrayerService.setup_prayer_reminders(
                                 prayer_times,
@@ -333,6 +336,7 @@ class ConnectionsResponseHandler(AbstractRequestHandler):
                                 locale=locale,
                             )
                         )
+
                         logger.info(
                             "Successfully set up reminders",
                             extra={
@@ -361,6 +365,7 @@ class ConnectionsResponseHandler(AbstractRequestHandler):
                                 )
                                 .response
                             )
+
                         elif e.status_code == 403:
                             return response_builder.speak(
                                 texts.MAX_REMINDERS_ERROR
@@ -370,6 +375,7 @@ class ConnectionsResponseHandler(AbstractRequestHandler):
                     confirmation_text = texts.REMINDER_SETUP_CONFIRMATION.format(
                         formatted_times
                     )
+
                     play_directive = PrayerService.get_adhan_directive()
 
                     return (

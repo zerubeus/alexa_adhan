@@ -9,7 +9,8 @@ create-skill:
 			--manifest ./skill-package/skill.json
 
 build-lambda:
-	cd lambda && poetry install --no-root && cd .. && sam build --use-container
+	poetry export --without-hashes --without-urls --format=requirements.txt | grep -E '^(aws-lambda-powertools|ask-sdk|boto3|requests|pytz)==' > lambda_layers/prayer_times_functions_layers/requirements.txt
+	sam build --use-container
 
 deploy-lambda:
 	$(eval SKILL_ID := $(shell jq -r '.profiles.default.skillId' .ask/ask-states.json))
