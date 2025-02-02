@@ -9,7 +9,7 @@ create-skill:
 			--manifest ./skill-package/skill.json
 
 build-lambda:
-	poetry export --without-hashes --without-urls --format=requirements.txt | grep -E '^(aws-lambda-powertools|ask-sdk|boto3|requests|pytz)==' > lambda_layers/prayer_times_functions_layers/requirements.txt
+	poetry export --without-hashes > lambda_layers/prayer_times_functions_layers/requirements.txt
 	sam build --use-container
 
 deploy-lambda:
