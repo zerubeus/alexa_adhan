@@ -15,7 +15,7 @@ Resources:
       Handler: app.handler
       Timeout: 30
       MemorySize: 256
-      Runtime: python3.11
+      Runtime: python3.13
       Architectures:
         - arm64
       Environment:
@@ -45,7 +45,7 @@ Resources:
       Description: dependencies for PrayerTimesFunction
       ContentUri: lambda_layers/prayer_times_functions_layers/
       CompatibleRuntimes:
-        - python3.11
+        - python3.13
       RetentionPolicy: Retain
 
   PreferencesTable:
