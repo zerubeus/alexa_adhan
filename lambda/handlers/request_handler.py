@@ -387,12 +387,21 @@ class ConnectionsResponseHandler(AbstractRequestHandler):
                     response_builder = handler_input.response_builder
 
                     alexa_permissions = req_envelope.context.system.user.permissions
-
                     logger.info(
                         f"ConnectionsResponseHandler Permissions: {alexa_permissions}"
                     )
 
-                    if not (alexa_permissions and alexa_permissions.consent_token):
+                    required_scope = permissions["reminder_rw"]
+                    # Check that permissions exist, a consent token is available, and the reminder permission is granted
+                    if not (
+                        alexa_permissions
+                        and alexa_permissions.consent_token
+                        and hasattr(alexa_permissions, "scopes")
+                        and alexa_permissions.scopes
+                        and required_scope in alexa_permissions.scopes
+                        and alexa_permissions.scopes[required_scope].get("status")
+                        == "GRANTED"
+                    ):
                         logger.error(
                             "Missing reminder permissions after user accepted",
                             extra={
@@ -405,36 +414,13 @@ class ConnectionsResponseHandler(AbstractRequestHandler):
                             response_builder.speak(texts.NOTIFY_MISSING_PERMISSIONS)
                             .set_card(
                                 AskForPermissionsConsentCard(
-                                    permissions=[permissions["reminder_rw"]]
+                                    permissions=[required_scope]
                                 )
                             )
                             .response
                         )
 
-                    alexa_permissions = req_envelope.context.system.user.permissions
-
-                    if not (alexa_permissions and alexa_permissions.consent_token):
-                        logger.error(
-                            "Missing location permissions",
-                            extra={
-                                "permissions": str(alexa_permissions),
-                                "has_token": (
-                                    bool(alexa_permissions.consent_token)
-                                    if alexa_permissions
-                                    else False
-                                ),
-                            },
-                        )
-                        return (
-                            response_builder.speak(texts.NOTIFY_MISSING_PERMISSIONS)
-                            .set_card(
-                                AskForPermissionsConsentCard(
-                                    permissions=permissions["full_address_r"]
-                                )
-                            )
-                            .response
-                        )
-
+                    # Continue processing now that permissions have been verified
                     success, location_result = get_device_location(
                         req_envelope,
                         response_builder,
