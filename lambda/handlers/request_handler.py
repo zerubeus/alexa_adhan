@@ -126,62 +126,67 @@ class EnableNotificationsIntentHandler(AbstractRequestHandler):
             locale = handler_input.request_envelope.request.locale
             texts = get_speech_text(locale)
 
-            alexa_permissions = (
-                handler_input.request_envelope.context.system.user.permissions
+            # Check specifically for reminder permissions
+            reminder_service = (
+                handler_input.service_client_factory.get_reminder_management_service()
             )
-
-            if not (alexa_permissions and alexa_permissions.consent_token):
-                logger.info("Requesting reminder permissions via voice")
-                try:
-                    return (
-                        handler_input.response_builder.speak(
-                            texts.ASK_REMINDER_PERMISSION
-                        )
-                        .add_directive(
-                            SendRequestDirective(
-                                name="AskFor",
-                                payload={
-                                    "@type": "AskForPermissionsConsentRequest",
-                                    "@version": "2",
-                                    "permissionScopes": [
-                                        {
-                                            "permissionScope": permissions[
-                                                "reminder_rw"
-                                            ],
-                                            "consentLevel": "ACCOUNT",
-                                        }
-                                    ],
-                                },
-                                token="user_reminder_permission",
-                            )
-                        )
-                        .response
-                    )
-                except ServiceException as se:
-                    logger.error(
-                        "ServiceException while requesting permissions",
-                        extra={
-                            "error": str(se),
-                            "status_code": getattr(se, "status_code", None),
-                        },
-                    )
-                    # Fallback to card if voice permission fails
-                    return (
-                        handler_input.response_builder.speak(
-                            texts.NOTIFY_MISSING_PERMISSIONS
-                        )
-                        .set_card(
-                            AskForPermissionsConsentCard(
-                                permissions=permissions["reminder_rw"]
-                            )
-                        )
-                        .response
-                    )
-            else:
+            try:
+                # Try to get reminders to test permissions
+                reminder_service.get_reminders()
                 logger.info(
-                    "EnableNotificationsIntentHandler: Permissions already granted, proceeding with reminder setup"
+                    "Reminder permissions already granted, proceeding with setup"
                 )
                 return self._setup_reminders(handler_input)
+            except ServiceException as se:
+                if se.status_code == 401:  # Unauthorized - missing permissions
+                    logger.info("Requesting reminder permissions via voice")
+                    try:
+                        return (
+                            handler_input.response_builder.speak(
+                                texts.ASK_REMINDER_PERMISSION
+                            )
+                            .add_directive(
+                                SendRequestDirective(
+                                    name="AskFor",
+                                    payload={
+                                        "@type": "AskForPermissionsConsentRequest",
+                                        "@version": "2",
+                                        "permissionScopes": [
+                                            {
+                                                "permissionScope": permissions[
+                                                    "reminder_rw"
+                                                ],
+                                                "consentLevel": "ACCOUNT",
+                                            }
+                                        ],
+                                    },
+                                    token="user_reminder_permission",
+                                )
+                            )
+                            .response
+                        )
+                    except ServiceException as se:
+                        logger.error(
+                            "ServiceException while requesting permissions",
+                            extra={
+                                "error": str(se),
+                                "status_code": getattr(se, "status_code", None),
+                            },
+                        )
+                        # Fallback to card if voice permission fails
+                        return (
+                            handler_input.response_builder.speak(
+                                texts.NOTIFY_MISSING_PERMISSIONS
+                            )
+                            .set_card(
+                                AskForPermissionsConsentCard(
+                                    permissions=permissions["reminder_rw"]
+                                )
+                            )
+                            .response
+                        )
+                else:
+                    raise se
 
         except Exception as e:
             logger.exception(
