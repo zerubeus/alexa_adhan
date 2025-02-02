@@ -410,15 +410,10 @@ class ConnectionsResponseHandler(AbstractRequestHandler):
                             },
                         )
 
-                        return (
-                            response_builder.speak(texts.NOTIFY_MISSING_PERMISSIONS)
-                            .set_card(
-                                AskForPermissionsConsentCard(
-                                    permissions=[required_scope]
-                                )
-                            )
-                            .response
-                        )
+                        # Instead of sending a card, we now respond with a voice prompt asking the user to activate permission by voice
+                        return response_builder.speak(
+                            "Pour configurer les rappels par la voix, dites 'Activer notifications'."
+                        ).response
 
                     # Continue processing now that permissions have been verified
                     success, location_result = get_device_location(
