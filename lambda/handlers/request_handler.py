@@ -130,14 +130,33 @@ class EnableNotificationsIntentHandler(AbstractRequestHandler):
             alexa_permissions = (
                 handler_input.request_envelope.context.system.user.permissions
             )
-            if not (
+            has_reminder_permission = (
                 alexa_permissions
+                and hasattr(alexa_permissions, "scopes")
                 and alexa_permissions.scopes
-                and permissions["reminder_rw"]
-                in [scope.scope_id for scope in alexa_permissions.scopes]
-            ):
+                and permissions["reminder_rw"] in alexa_permissions.scopes
+            )
+
+            if not has_reminder_permission:
                 logger.info(
-                    "Reminder permissions not found in scopes, requesting permissions"
+                    "Reminder permissions not found in scopes, requesting permissions",
+                    extra={
+                        "has_permissions": bool(alexa_permissions),
+                        "has_scopes": (
+                            hasattr(alexa_permissions, "scopes")
+                            if alexa_permissions
+                            else False
+                        ),
+                        "scopes": (
+                            alexa_permissions.scopes
+                            if (
+                                alexa_permissions
+                                and hasattr(alexa_permissions, "scopes")
+                            )
+                            else None
+                        ),
+                        "reminder_permission": permissions["reminder_rw"],
+                    },
                 )
                 try:
                     return (
