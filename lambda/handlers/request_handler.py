@@ -179,19 +179,134 @@ class EnableNotificationsIntentHandler(AbstractRequestHandler):
                     )
             else:
                 logger.info(
-                    "EnableNotificationsIntentHandler Requesting reminder permissions already granted"
+                    "EnableNotificationsIntentHandler: Permissions already granted, proceeding with reminder setup"
                 )
-                return (
-                    handler_input.response_builder.speak(
-                        texts.REMINDER_PERMISSION_ALREADY_GRANTED
-                    )
-                    .ask(texts.ASK_REMINDER_PERMISSION)
-                    .response
-                )
+                return self._setup_reminders(handler_input)
 
         except Exception as e:
             logger.exception(
                 "Error in EnableNotificationsIntentHandler",
+                extra={
+                    "error_type": type(e).__name__,
+                    "error": str(e),
+                    "traceback": True,
+                },
+            )
+            return handler_input.response_builder.speak(texts.ERROR).response
+
+    def _setup_reminders(self, handler_input):
+        try:
+            locale = handler_input.request_envelope.request.locale
+            texts = get_speech_text(locale)
+            req_envelope = handler_input.request_envelope
+            response_builder = handler_input.response_builder
+
+            success, location_result = get_device_location(
+                req_envelope,
+                response_builder,
+                handler_input.service_client_factory,
+            )
+
+            if not success:
+                logger.error(
+                    "Failed to get device location",
+                    extra={"location_result": str(location_result)},
+                )
+                return location_result
+
+            latitude, longitude = location_result
+            logger.info(
+                "Successfully got device location",
+                extra={"latitude": latitude, "longitude": longitude},
+            )
+
+            prayer_times = PrayerService.get_prayer_times(latitude, longitude)
+            if not prayer_times:
+                logger.error("Failed to get prayer times after retries")
+                return response_builder.speak(texts.ERROR).response
+
+            device_id = req_envelope.context.system.device.device_id
+            try:
+                timezone = handler_input.service_client_factory.get_ups_service().get_system_time_zone(
+                    device_id
+                )
+
+                user_timezone = pytz.timezone(timezone)
+                logger.info("Got user timezone", extra={"timezone": timezone})
+            except Exception as e:
+                logger.error(
+                    "Failed to get user timezone",
+                    extra={
+                        "error_type": type(e).__name__,
+                        "error": str(e),
+                        "device_id": device_id,
+                    },
+                )
+                return response_builder.speak(texts.ERROR).response
+
+            try:
+                reminder_service = (
+                    handler_input.service_client_factory.get_reminder_management_service()
+                )
+
+                logger.info("Setting up prayer reminders")
+
+                reminders, formatted_times = PrayerService.setup_prayer_reminders(
+                    prayer_times,
+                    reminder_service,
+                    user_timezone,
+                    locale=locale,
+                )
+
+                logger.info(
+                    "Successfully set up reminders",
+                    extra={
+                        "num_reminders": len(reminders),
+                        "formatted_times": formatted_times,
+                    },
+                )
+            except ServiceException as e:
+                logger.error(
+                    "Failed to set up reminders",
+                    extra={
+                        "error": str(e),
+                        "status_code": getattr(e, "status_code", None),
+                        "error_type": type(e).__name__,
+                        "traceback": True,
+                    },
+                )
+
+                if e.status_code == 401:
+                    return (
+                        response_builder.speak(texts.NOTIFY_MISSING_PERMISSIONS)
+                        .set_card(
+                            AskForPermissionsConsentCard(
+                                permissions=permissions["reminder_rw"]
+                            )
+                        )
+                        .response
+                    )
+
+                elif e.status_code == 403:
+                    return response_builder.speak(texts.MAX_REMINDERS_ERROR).response
+                return response_builder.speak(texts.ERROR).response
+
+            confirmation_text = texts.REMINDER_SETUP_CONFIRMATION.format(
+                formatted_times
+            )
+
+            play_directive = PrayerService.get_adhan_directive()
+
+            return (
+                response_builder.speak(confirmation_text)
+                .add_directive(play_directive)
+                .set_should_end_session(True)
+                .response
+            )
+
+        except Exception as e:
+            logger.exception(
+                "Error in _setup_reminders",
                 extra={
                     "error_type": type(e).__name__,
                     "error": str(e),
