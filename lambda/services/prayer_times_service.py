@@ -6,13 +6,13 @@ import pytz
 from typing import List, Optional, Tuple
 from aws_lambda_powertools import Logger
 from ask_sdk_model.services import ServiceException
+from ask_sdk_model.ui import AskForPermissionsConsentCard, SimpleCard
 from ask_sdk_model.interfaces.audioplayer import (
     PlayDirective,
     AudioItem,
     Stream,
     PlayBehavior,
 )
-from speech_text import get_speech_text
 from ask_sdk_model.services.reminder_management import (
     Trigger,
     TriggerType,
@@ -25,6 +25,9 @@ from ask_sdk_model.services.reminder_management import (
     PushNotification,
     PushNotificationStatus,
 )
+from services.geolocation_service import get_device_location, get_city_name
+from speech_text import get_speech_text
+from auth.auth_permissions import permissions
 
 logger = Logger()
 
@@ -262,4 +265,84 @@ class PrayerService:
                     offset_in_milliseconds=0,
                 )
             ),
+        )
+
+    @staticmethod
+    def get_prayer_times_with_location(handler_input):
+        """Get prayer times with location information.
+
+        Args:
+            handler_input: The Alexa handler input
+
+        Returns:
+            Response: Response containing prayer times and location information
+
+        Raises:
+            ServiceException: If there are permission or location service issues
+        """
+        locale = handler_input.request_envelope.request.locale
+        texts = get_speech_text(locale)
+        req_envelope = handler_input.request_envelope
+        response_builder = handler_input.response_builder
+        alexa_permissions = req_envelope.context.system.user.permissions
+
+        if not (alexa_permissions and alexa_permissions.consent_token):
+            logger.warning("Missing permissions for device address")
+            return (
+                response_builder.speak(texts.NOTIFY_MISSING_PERMISSIONS)
+                .set_card(
+                    AskForPermissionsConsentCard(
+                        permissions=permissions["full_address_r"]
+                    )
+                )
+                .response
+            )
+
+        success, location_result = get_device_location(
+            req_envelope, response_builder, handler_input.service_client_factory
+        )
+
+        if not success:
+            return location_result
+
+        latitude, longitude = location_result
+
+        prayer_times = PrayerService.get_prayer_times(latitude, longitude)
+        formatted_times = PrayerService.format_prayer_times(prayer_times)
+
+        city_name = get_city_name(latitude, longitude)
+        location_text = texts.LOCATION_TEXT.format(city_name) if city_name else ""
+        speech_text = texts.PRIER_TIMES.format(formatted_times) + location_text
+
+        return (
+            response_builder.speak(speech_text)
+            .set_card(SimpleCard("Prayer Times", speech_text))
+            .response
+        )
+
+    @staticmethod
+    def handle_service_exception(handler_input, exception):
+        """Handle service exceptions and return appropriate responses.
+
+        Args:
+            handler_input: The Alexa handler input
+            exception: The ServiceException that was caught
+
+        Returns:
+            Response: Appropriate response based on the exception type
+        """
+        locale = handler_input.request_envelope.request.locale
+        texts = get_speech_text(locale)
+
+        if exception.status_code == 403:
+            return (
+                handler_input.response_builder.speak(texts.NOTIFY_MISSING_PERMISSIONS)
+                .set_card(AskForPermissionsConsentCard(permissions=permissions))
+                .response
+            )
+
+        return (
+            handler_input.response_builder.speak(texts.LOCATION_FAILURE)
+            .ask(texts.LOCATION_FAILURE)
+            .response
         )

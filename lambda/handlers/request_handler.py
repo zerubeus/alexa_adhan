@@ -8,6 +8,7 @@ from ask_sdk_model.ui import SimpleCard
 from aws_lambda_powertools import Logger
 
 from services.notification_service import NotificationService
+from services.prayer_times_service import PrayerService
 from speech_text import get_speech_text
 
 logger = Logger()
@@ -44,7 +45,7 @@ class GetPrayerTimesIntentHandler(AbstractRequestHandler):
 
     def handle(self, handler_input):
         try:
-            return NotificationService.get_prayer_times_with_location(handler_input)
+            return PrayerService.get_prayer_times_with_location(handler_input)
         except ServiceException as se:
             logger.error(
                 "ServiceException in GetPrayerTimesIntentHandler",
@@ -54,7 +55,7 @@ class GetPrayerTimesIntentHandler(AbstractRequestHandler):
                     "status_code": getattr(se, "status_code", None),
                 },
             )
-            return NotificationService.handle_service_exception(handler_input, se)
+            return PrayerService.handle_service_exception(handler_input, se)
         except Exception as e:
             logger.exception(f"Error in GetPrayerTimesIntentHandler: {e}")
             return handler_input.response_builder.speak(
@@ -110,7 +111,7 @@ class GetPrayerTimesExceptionHandler(AbstractExceptionHandler):
         return isinstance(exception, ServiceException)
 
     def handle(self, handler_input, exception):
-        return NotificationService.handle_service_exception(handler_input, exception)
+        return PrayerService.handle_service_exception(handler_input, exception)
 
 
 class CatchAllExceptionHandler(AbstractExceptionHandler):
