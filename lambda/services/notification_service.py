@@ -224,3 +224,102 @@ class NotificationService:
                 },
             )
             return handler_input.response_builder.speak(texts.ERROR).response
+
+    @staticmethod
+    def handle_service_exception(handler_input, exception):
+        """Handle service exceptions and return appropriate responses.
+
+        Args:
+            handler_input: The Alexa handler input
+            exception: The ServiceException that was caught
+
+        Returns:
+            Response: Appropriate response based on the exception type
+        """
+        locale = handler_input.request_envelope.request.locale
+        texts = get_speech_text(locale)
+
+        if exception.status_code == 403:
+            return (
+                handler_input.response_builder.speak(texts.NOTIFY_MISSING_PERMISSIONS)
+                .set_card(AskForPermissionsConsentCard(permissions=permissions))
+                .response
+            )
+
+        return (
+            handler_input.response_builder.speak(texts.LOCATION_FAILURE)
+            .ask(texts.LOCATION_FAILURE)
+            .response
+        )
+
+    @staticmethod
+    def handle_connections_response(handler_input):
+        """Handle the Connections.Response for reminder permission requests."""
+        locale = handler_input.request_envelope.request.locale
+        texts = get_speech_text(locale)
+        request = handler_input.request_envelope.request
+
+        logger.info(
+            "Handling Connections.Response",
+            extra={
+                "request_id": handler_input.request_envelope.request.request_id,
+                "request_name": request.name,
+                "status_code": request.status.code,
+                "payload_status": (
+                    request.payload.get("status") if request.payload else None
+                ),
+                "locale": locale,
+            },
+        )
+
+        if request.name == "AskFor" and request.status.code == "200":
+            if request.payload.get("status") == "ACCEPTED":
+                try:
+                    alexa_permissions = (
+                        handler_input.request_envelope.context.system.user.permissions
+                    )
+                    logger.info(
+                        f"ConnectionsResponseHandler Permissions: {alexa_permissions}"
+                    )
+
+                    if not NotificationService.check_reminder_permission(
+                        alexa_permissions
+                    ):
+                        logger.error(
+                            "Missing reminder permissions after user accepted",
+                            extra={
+                                "permissions": str(alexa_permissions),
+                                "has_token": bool(
+                                    getattr(alexa_permissions, "consent_token", None)
+                                ),
+                            },
+                        )
+                        return handler_input.response_builder.speak(
+                            "Pour configurer les rappels par la voix, dites 'Activer notifications'."
+                        ).response
+
+                    return NotificationService.setup_prayer_notifications(handler_input)
+
+                except Exception as e:
+                    logger.exception(
+                        "Unexpected error in ConnectionsResponseHandler",
+                        extra={
+                            "error_type": type(e).__name__,
+                            "error": str(e),
+                            "traceback": True,
+                        },
+                    )
+                    return handler_input.response_builder.speak(texts.ERROR).response
+            else:
+                logger.info("User denied permission request")
+                return (
+                    handler_input.response_builder.speak(texts.PERMISSION_DENIED)
+                    .set_should_end_session(True)
+                    .response
+                )
+
+        logger.error(
+            "Invalid request",
+            extra={"request_name": request.name, "status_code": request.status.code},
+        )
+        return handler_input.response_builder.speak(texts.ERROR).response
