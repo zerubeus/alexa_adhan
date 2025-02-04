@@ -4,10 +4,9 @@ from ask_sdk_core.dispatch_components import (
 )
 from ask_sdk_core.utils import is_request_type, is_intent_name
 from ask_sdk_model.services import ServiceException
-from ask_sdk_model.ui import SimpleCard
 from aws_lambda_powertools import Logger
 
-from services.notification_service import NotificationService
+from services.prayer_notification_service import PrayerNotificationService
 from services.prayer_times_service import PrayerService
 from speech_text import get_speech_text
 
@@ -33,7 +32,6 @@ class LaunchRequestHandler(AbstractRequestHandler):
         return (
             handler_input.response_builder.speak(texts.WELCOME)
             .ask(texts.WHAT_DO_YOU_WANT)
-            .set_card(SimpleCard("Prayer Times", texts.WELCOME))
             .set_should_end_session(False)
             .response
         )
@@ -77,14 +75,16 @@ class EnableNotificationsIntentHandler(AbstractRequestHandler):
                 handler_input.request_envelope.context.system.user.permissions
             )
 
-            if not NotificationService.check_reminder_permission(alexa_permissions):
-                return NotificationService.request_reminder_permission(
+            if not PrayerNotificationService.check_reminder_permission(
+                alexa_permissions
+            ):
+                return PrayerNotificationService.request_reminder_permission(
                     handler_input.response_builder, texts
                 )
 
             # If we have permissions, proceed with setup
             logger.info("Reminder permissions found in scopes, proceeding with setup")
-            return NotificationService.setup_prayer_notifications(handler_input)
+            return PrayerNotificationService.setup_prayer_notifications(handler_input)
 
         except Exception as e:
             logger.exception(
@@ -103,7 +103,7 @@ class ConnectionsResponseHandler(AbstractRequestHandler):
         return is_request_type("Connections.Response")(handler_input)
 
     def handle(self, handler_input):
-        return NotificationService.handle_connections_response(handler_input)
+        return PrayerNotificationService.handle_connections_response(handler_input)
 
 
 class GetPrayerTimesExceptionHandler(AbstractExceptionHandler):
@@ -138,7 +138,6 @@ class HelpIntentHandler(AbstractRequestHandler):
 
         return (
             handler_input.response_builder.speak(texts.HELP_TEXT)
-            .set_card(SimpleCard("Help", texts.HELP_TEXT))
             .set_should_end_session(False)
             .response
         )
@@ -156,7 +155,6 @@ class CancelAndStopIntentHandler(AbstractRequestHandler):
 
         return (
             handler_input.response_builder.speak(texts.GOODBYE)
-            .set_card(SimpleCard("Goodbye", texts.GOODBYE))
             .set_should_end_session(True)
             .response
         )
@@ -172,7 +170,6 @@ class FallbackIntentHandler(AbstractRequestHandler):
 
         return (
             handler_input.response_builder.speak(texts.FALL_BACK_TEXT)
-            .set_card(SimpleCard("I didn't understand", texts.FALL_BACK_TEXT))
             .set_should_end_session(False)
             .response
         )
