@@ -437,44 +437,12 @@ class PrayerNotificationService:
 
         if request.name == "AskFor" and request.status.code == "200":
             if request.payload.get("status") == "ACCEPTED":
-                try:
-                    alexa_permissions = (
-                        handler_input.request_envelope.context.system.user.permissions
-                    )
-                    logger.info(
-                        f"ConnectionsResponseHandler Permissions: {alexa_permissions}"
-                    )
-
-                    if not PrayerNotificationService.check_reminder_permission(
-                        alexa_permissions
-                    ):
-                        logger.error(
-                            "Missing reminder permissions after user accepted",
-                            extra={
-                                "permissions": str(alexa_permissions),
-                                "has_token": bool(
-                                    getattr(alexa_permissions, "consent_token", None)
-                                ),
-                            },
-                        )
-                        return handler_input.response_builder.speak(
-                            texts.NOTIFY_MISSING_REMINDER_PERMISSIONS
-                        ).response
-
-                    return PrayerNotificationService.setup_prayer_notifications(
-                        handler_input
-                    )
-
-                except Exception as e:
-                    logger.exception(
-                        "Unexpected error in ConnectionsResponseHandler",
-                        extra={
-                            "error_type": type(e).__name__,
-                            "error": str(e),
-                            "traceback": True,
-                        },
-                    )
-                    return handler_input.response_builder.speak(texts.ERROR).response
+                logger.info(
+                    "Permission accepted from Connections.Response. Proceeding to set up prayer notifications."
+                )
+                return PrayerNotificationService.setup_prayer_notifications(
+                    handler_input
+                )
             else:
                 logger.info("User denied permission request")
                 return (
