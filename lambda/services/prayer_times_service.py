@@ -165,7 +165,9 @@ class PrayerService:
 
         if exception.status_code == 403:
             return (
-                handler_input.response_builder.speak(texts.NOTIFY_MISSING_PERMISSIONS)
+                handler_input.response_builder.speak(
+                    texts.NOTIFY_MISSING_LOCATION_PERMISSIONS
+                )
                 .set_card(AskForPermissionsConsentCard(permissions=permissions))
                 .response
             )

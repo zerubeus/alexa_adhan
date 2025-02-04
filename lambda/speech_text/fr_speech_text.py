@@ -1,7 +1,10 @@
 class SpeechText:
     WELCOME = "Bienvenue dans Heures de Prière!"
     WHAT_DO_YOU_WANT = "Que puis-je faire pour vous?"
-    NOTIFY_MISSING_PERMISSIONS = "Pour obtenir les heures de prière, j'ai besoin d'accéder à votre localisation. J'ai envoyé une carte pour vous aider à activer cette permission."
+    NOTIFY_MISSING_LOCATION_PERMISSIONS = "Pour obtenir les heures de prière, j'ai besoin d'accéder à votre localisation. Dites 'Ok Alexa, activer la localisation' pour activer cette permission."
+    NOTIFY_MISSING_REMINDER_PERMISSIONS = (
+        "Pour configurer les rappels par la voix, dites 'Activer notifications'."
+    )
     NO_LOCATION = "Je n'ai pas pu obtenir votre localisation. Veuillez vérifier vos paramètres de localisation dans l'application Alexa."
     ERROR = "Désolé, une erreur s'est produite. Veuillez réessayer!"
     LOCATION_FAILURE = "Je n'ai pas pu obtenir votre localisation. Veuillez vérifier vos paramètres de localisation et réessayer."

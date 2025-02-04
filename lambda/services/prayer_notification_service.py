@@ -108,7 +108,7 @@ class PrayerNotificationService:
             )
             # Fallback to card if voice permission fails
             return (
-                response_builder.speak(texts.NOTIFY_MISSING_PERMISSIONS)
+                response_builder.speak(texts.NOTIFY_MISSING_REMINDER_PERMISSIONS)
                 .set_card(
                     AskForPermissionsConsentCard(permissions=permissions["reminder_rw"])
                 )
@@ -377,7 +377,9 @@ class PrayerNotificationService:
 
                 if e.status_code == 401:
                     return (
-                        response_builder.speak(texts.NOTIFY_MISSING_PERMISSIONS)
+                        response_builder.speak(
+                            texts.NOTIFY_MISSING_REMINDER_PERMISSIONS
+                        )
                         .set_card(
                             AskForPermissionsConsentCard(
                                 permissions=permissions["reminder_rw"]
@@ -456,7 +458,7 @@ class PrayerNotificationService:
                             },
                         )
                         return handler_input.response_builder.speak(
-                            "Pour configurer les rappels par la voix, dites 'Activer notifications'."
+                            texts.NOTIFY_MISSING_REMINDER_PERMISSIONS
                         ).response
 
                     return PrayerNotificationService.setup_prayer_notifications(

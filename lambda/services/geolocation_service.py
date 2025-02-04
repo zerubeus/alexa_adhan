@@ -109,7 +109,7 @@ def get_device_location(
             )
             return (
                 False,
-                response_builder.speak(texts.NOTIFY_MISSING_PERMISSIONS)
+                response_builder.speak(texts.NOTIFY_MISSING_LOCATION_PERMISSIONS)
                 .set_card(
                     AskForPermissionsConsentCard(
                         permissions=permissions["geolocation_r"]
@@ -182,7 +182,7 @@ def get_device_location(
             logger.warning("No API access token available")
             return (
                 False,
-                response_builder.speak(texts.NOTIFY_MISSING_PERMISSIONS)
+                response_builder.speak(texts.NOTIFY_MISSING_LOCATION_PERMISSIONS)
                 .set_card(
                     AskForPermissionsConsentCard(
                         permissions=permissions["full_address_r"]
@@ -243,7 +243,7 @@ def get_device_location(
             if se.status_code == 403:
                 return (
                     False,
-                    response_builder.speak(texts.NOTIFY_MISSING_PERMISSIONS)
+                    response_builder.speak(texts.NOTIFY_MISSING_LOCATION_PERMISSIONS)
                     .set_card(
                         AskForPermissionsConsentCard(
                             permissions=permissions["full_address_r"]

@@ -1,7 +1,10 @@
 class SpeechText:
     WELCOME = "Welcome to Prayer Times!"
     WHAT_DO_YOU_WANT = "What can I help you with?"
-    NOTIFY_MISSING_PERMISSIONS = "To get prayer times, I need access to your location. I've sent a card to help you enable this permission."
+    NOTIFY_MISSING_LOCATION_PERMISSIONS = "To get prayer times, I need access to your location. Say 'Ok Alexa, enable location' to enable this permission."
+    NOTIFY_MISSING_REMINDER_PERMISSIONS = (
+        "To set up voice reminders, say 'Enable notifications'."
+    )
     NO_LOCATION = "I couldn't get your location. Please check your location settings in the Alexa app."
     ERROR = "Sorry, something went wrong. Please try again!"
     LOCATION_FAILURE = "I couldn't get your location. Please check your location settings and try again."
