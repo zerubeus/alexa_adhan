@@ -438,8 +438,32 @@ class PrayerNotificationService:
         if request.name == "AskFor" and request.status.code == "200":
             if request.payload.get("status") == "ACCEPTED":
                 logger.info(
-                    "Permission accepted from Connections.Response. Proceeding to set up prayer notifications."
+                    "Permission accepted from Connections.Response. Patching user permissions to include reminder permission."
                 )
+                # Patch the user's permissions to include the reminder scope
+                user_permissions = (
+                    handler_input.request_envelope.context.system.user.permissions
+                )
+                if user_permissions is not None:
+                    if (
+                        not hasattr(user_permissions, "scopes")
+                        or user_permissions.scopes is None
+                    ):
+                        user_permissions.scopes = {}
+                    user_permissions.scopes[permissions["reminder_rw"]] = {
+                        "status": "GRANTED"
+                    }
+                else:
+                    # create a basic permissions object
+                    UserPermissions = type("UserPermissions", (object,), {})
+                    user_permissions = UserPermissions()
+                    user_permissions.consent_token = ""
+                    user_permissions.scopes = {
+                        permissions["reminder_rw"]: {"status": "GRANTED"}
+                    }
+                    handler_input.request_envelope.context.system.user.permissions = (
+                        user_permissions
+                    )
                 return PrayerNotificationService.setup_prayer_notifications(
                     handler_input
                 )
