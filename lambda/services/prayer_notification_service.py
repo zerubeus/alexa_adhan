@@ -381,9 +381,9 @@ class PrayerNotificationService:
     @staticmethod
     def handle_connections_response(handler_input):
         """Handle the Connections.Response for reminder permission requests."""
+        request = handler_input.request_envelope.request
         locale = handler_input.request_envelope.request.locale
         texts = get_speech_text(locale)
-        request = handler_input.request_envelope.request
 
         logger.info(
             "Handling Connections.Response",
@@ -398,45 +398,33 @@ class PrayerNotificationService:
             },
         )
 
+        # Ensure it's the response to our "AskFor" directive and status code == 200
         if request.name == "AskFor" and request.status.code == "200":
-            if request.payload.get("status") == "ACCEPTED":
-                logger.info(
-                    "Permission accepted. Checking user permissions for reminders."
-                )
+            status = request.payload.get("status")
+            if status == "ACCEPTED":
+                logger.info("User accepted the reminder permission request.")
 
-                alexa_permissions = (
-                    handler_input.request_envelope.context.system.user.permissions
+                # Instead of setting up reminders now, politely let them know they're set
+                # for next time
+                return (
+                    handler_input.response_builder.speak(
+                        texts.PERMISSIONS_ACCEPTED_REINVITE
+                    )
+                    .set_should_end_session(True)
+                    .response
                 )
-
-                has_reminder_permission = (
-                    PrayerNotificationService.check_reminder_permission(
-                        alexa_permissions
-                    )
-                )
-
-                if has_reminder_permission:
-                    return PrayerNotificationService.setup_prayer_notifications(
-                        handler_input
-                    )
-                else:
-                    return (
-                        handler_input.response_builder.speak(
-                            texts.REMINDER_PERMISSION_NOT_READY
-                        )
-                        .set_should_end_session(True)
-                        .response
-                    )
             else:
-                logger.info("User denied permission request")
+                # The user denied or something else
+                logger.info("User denied the permission request")
                 return (
                     handler_input.response_builder.speak(texts.PERMISSION_DENIED)
                     .set_should_end_session(True)
                     .response
                 )
 
+        # Any other type of Connections.Response or non-200 just end politely
         logger.error(
             "Invalid request",
             extra={"request_name": request.name, "status_code": request.status.code},
         )
-
         return handler_input.response_builder.speak(texts.ERROR).response

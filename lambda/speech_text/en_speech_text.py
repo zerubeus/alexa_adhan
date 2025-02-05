@@ -23,3 +23,7 @@ class SpeechText:
     LOCATION_TEXT = " in {}."
     REMINDER_PERMISSION_ALREADY_GRANTED = "You already have reminders permission! Would you like to set up a daily reminder?"
     REMINDER_PERMISSION_NOT_READY = "You don't have reminders permission yet. Please enable notifications to set up reminders."
+    PERMISSIONS_ACCEPTED_REINVITE = (
+        "Great! Your permissions have been updated. "
+        "Please say 'Enable notifications' again, and I'll set up your prayer reminders."
+    )
