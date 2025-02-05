@@ -311,6 +311,7 @@ class PrayerNotificationService:
                 return location_result
 
             latitude, longitude = location_result
+
             logger.info(
                 "Successfully got device location",
                 extra={"latitude": latitude, "longitude": longitude},
@@ -318,16 +319,19 @@ class PrayerNotificationService:
 
             # Get prayer times
             prayer_times = PrayerService.get_prayer_times(latitude, longitude)
+
             if not prayer_times:
                 logger.error("Failed to get prayer times after retries")
                 return response_builder.speak(texts.ERROR).response
 
             # Get user timezone
             device_id = req_envelope.context.system.device.device_id
+
             try:
                 timezone = handler_input.service_client_factory.get_ups_service().get_system_time_zone(
                     device_id
                 )
+
                 user_timezone = pytz.timezone(timezone)
                 logger.info("Got user timezone", extra={"timezone": timezone})
             except Exception as e:
@@ -376,6 +380,7 @@ class PrayerNotificationService:
                 )
 
                 if e.status_code == 401:
+                    logger.info("Asking user to enable reminder permissions")
                     return (
                         response_builder.speak(
                             texts.NOTIFY_MISSING_REMINDER_PERMISSIONS
@@ -388,13 +393,16 @@ class PrayerNotificationService:
                         .response
                     )
                 elif e.status_code == 403:
+                    logger.info("Max reminders limit reached")
                     return response_builder.speak(texts.MAX_REMINDERS_ERROR).response
+
                 return response_builder.speak(texts.ERROR).response
 
             # Return success response
             confirmation_text = texts.REMINDER_SETUP_CONFIRMATION.format(
                 formatted_times
             )
+
             play_directive = PrayerService.get_adhan_directive()
 
             return (
@@ -413,6 +421,7 @@ class PrayerNotificationService:
                     "traceback": True,
                 },
             )
+
             return handler_input.response_builder.speak(texts.ERROR).response
 
     @staticmethod
@@ -440,30 +449,11 @@ class PrayerNotificationService:
                 logger.info(
                     "Permission accepted from Connections.Response. Patching user permissions to include reminder permission."
                 )
-                # Patch the user's permissions to include the reminder scope
-                user_permissions = (
-                    handler_input.request_envelope.context.system.user.permissions
+
+                logger.info(
+                    "New permission object", extra={"permissions": request.payload}
                 )
-                if user_permissions is not None:
-                    if (
-                        not hasattr(user_permissions, "scopes")
-                        or user_permissions.scopes is None
-                    ):
-                        user_permissions.scopes = {}
-                    user_permissions.scopes[permissions["reminder_rw"]] = {
-                        "status": "GRANTED"
-                    }
-                else:
-                    # create a basic permissions object
-                    UserPermissions = type("UserPermissions", (object,), {})
-                    user_permissions = UserPermissions()
-                    user_permissions.consent_token = ""
-                    user_permissions.scopes = {
-                        permissions["reminder_rw"]: {"status": "GRANTED"}
-                    }
-                    handler_input.request_envelope.context.system.user.permissions = (
-                        user_permissions
-                    )
+
                 return PrayerNotificationService.setup_prayer_notifications(
                     handler_input
                 )
@@ -479,4 +469,5 @@ class PrayerNotificationService:
             "Invalid request",
             extra={"request_name": request.name, "status_code": request.status.code},
         )
+
         return handler_input.response_builder.speak(texts.ERROR).response
