@@ -152,131 +152,80 @@ class PrayerNotificationService:
 
         for prayer in PrayerService.PRAYERS:
             if prayer in prayer_times:
-                try:
-                    prayer_time = datetime.datetime.strptime(
-                        prayer_times[prayer], "%H:%M"
-                    ).time()
+                prayer_time = datetime.datetime.strptime(
+                    prayer_times[prayer], "%H:%M"
+                ).time()
 
-                    now = datetime.datetime.now(user_timezone)
-                    today = now.date()
+                now = datetime.datetime.now(user_timezone)
+                today = now.date()
 
+                reminder_time = user_timezone.localize(
+                    datetime.datetime.combine(today, prayer_time)
+                )
+
+                if reminder_time < now:
                     reminder_time = user_timezone.localize(
-                        datetime.datetime.combine(today, prayer_time)
-                    )
-
-                    if reminder_time < now:
-                        reminder_time = user_timezone.localize(
-                            datetime.datetime.combine(
-                                today + datetime.timedelta(days=1), prayer_time
-                            )
+                        datetime.datetime.combine(
+                            today + datetime.timedelta(days=1), prayer_time
                         )
-
-                    formatted_times.append(
-                        f"{prayer} at {prayer_time.strftime('%I:%M %p')}"
                     )
 
-                    notification_time = reminder_time.strftime("%Y-%m-%dT%H:%M:%S")
+                formatted_times.append(
+                    f"{prayer} at {prayer_time.strftime('%I:%M %p')}"
+                )
 
-                    logger.info(
-                        f"Setting up reminder for {prayer}",
-                        extra={
-                            "prayer": prayer,
-                            "notification_time": notification_time,
-                            "timezone": str(user_timezone),
-                            "reminder_time": str(reminder_time),
-                            "current_time": str(now),
-                        },
-                    )
+                notification_time = reminder_time.strftime("%Y-%m-%dT%H:%M:%S")
 
-                    trigger = Trigger(
-                        object_type=TriggerType.SCHEDULED_ABSOLUTE,
-                        scheduled_time=notification_time,
-                        time_zone_id=str(user_timezone),
-                        recurrence=Recurrence(freq=RecurrenceFreq.DAILY, interval=1),
-                    )
+                logger.info(
+                    f"Setting up reminder for {prayer}",
+                    extra={
+                        "prayer": prayer,
+                        "notification_time": notification_time,
+                        "timezone": str(user_timezone),
+                        "reminder_time": str(reminder_time),
+                        "current_time": str(now),
+                    },
+                )
 
-                    reminder_text = texts.PRAYER_TIME_REMINDER.format(prayer)
-                    text = SpokenText(locale=locale, text=reminder_text)
-                    alert_info = AlertInfo(SpokenInfo([text]))
-                    push_notification = PushNotification(PushNotificationStatus.ENABLED)
+                trigger = Trigger(
+                    object_type=TriggerType.SCHEDULED_ABSOLUTE,
+                    scheduled_time=notification_time,
+                    time_zone_id=str(user_timezone),
+                    recurrence=Recurrence(freq=RecurrenceFreq.DAILY, interval=1),
+                )
 
-                    reminder_request = ReminderRequest(
-                        request_time=datetime.datetime.now(pytz.UTC).isoformat(),
-                        trigger=trigger,
-                        alert_info=alert_info,
-                        push_notification=push_notification,
-                    )
+                reminder_text = texts.PRAYER_TIME_REMINDER.format(prayer)
+                text = SpokenText(locale=locale, text=reminder_text)
+                alert_info = AlertInfo(SpokenInfo([text]))
+                push_notification = PushNotification(PushNotificationStatus.ENABLED)
 
-                    try:
-                        logger.info(
-                            f"Creating reminder for {prayer}",
-                            extra={
-                                "prayer": prayer,
-                                "reminder_request": str(reminder_request),
-                                "trigger_time": notification_time,
-                            },
-                        )
+                reminder_request = ReminderRequest(
+                    request_time=datetime.datetime.now(pytz.UTC).isoformat(),
+                    trigger=trigger,
+                    alert_info=alert_info,
+                    push_notification=push_notification,
+                )
 
-                        reminder = reminder_service.create_reminder(reminder_request)
-                        reminders.append(reminder)
+                logger.info(
+                    f"Creating reminder for {prayer}",
+                    extra={
+                        "prayer": prayer,
+                        "reminder_request": str(reminder_request),
+                        "trigger_time": notification_time,
+                    },
+                )
 
-                        logger.info(
-                            f"Successfully created reminder for {prayer}",
-                            extra={
-                                "prayer": prayer,
-                                "reminder_id": getattr(reminder, "alert_token", None),
-                                "reminder_status": getattr(reminder, "status", None),
-                            },
-                        )
-                    except ServiceException as e:
-                        if e.status_code == 401:
-                            logger.error(
-                                f"Unauthorized: Missing permissions for creating reminder for {prayer}",
-                                extra={
-                                    "prayer": prayer,
-                                    "error": str(e),
-                                    "status_code": e.status_code,
-                                    "request": str(reminder_request),
-                                    "error_type": type(e).__name__,
-                                },
-                            )
-                            raise
-                        elif e.status_code == 403:  # Max reminders limit reached
-                            logger.error(
-                                f"Forbidden: Max reminders limit reached for {prayer}",
-                                extra={
-                                    "prayer": prayer,
-                                    "error": str(e),
-                                    "status_code": e.status_code,
-                                    "request": str(reminder_request),
-                                    "error_type": type(e).__name__,
-                                },
-                            )
-                            raise
-                        else:
-                            logger.error(
-                                f"Failed to create reminder for {prayer}",
-                                extra={
-                                    "prayer": prayer,
-                                    "error": str(e),
-                                    "status_code": getattr(e, "status_code", None),
-                                    "request": str(reminder_request),
-                                    "error_type": type(e).__name__,
-                                    "traceback": True,
-                                },
-                            )
-                            raise
-                except Exception as e:
-                    logger.error(
-                        f"Error processing reminder for {prayer}",
-                        extra={
-                            "prayer": prayer,
-                            "error": str(e),
-                            "error_type": type(e).__name__,
-                            "traceback": True,
-                        },
-                    )
-                    raise
+                reminder = reminder_service.create_reminder(reminder_request)
+                reminders.append(reminder)
+
+                logger.info(
+                    f"Successfully created reminder for {prayer}",
+                    extra={
+                        "prayer": prayer,
+                        "reminder_id": getattr(reminder, "alert_token", None),
+                        "reminder_status": getattr(reminder, "status", None),
+                    },
+                )
 
         logger.info(
             "Completed setting up reminders",
@@ -291,10 +240,10 @@ class PrayerNotificationService:
     def setup_prayer_notifications(handler_input):
         """Set up prayer notifications for the user."""
         try:
-            locale = handler_input.request_envelope.request.locale
-            texts = get_speech_text(locale)
             req_envelope = handler_input.request_envelope
             response_builder = handler_input.response_builder
+            locale = handler_input.request_envelope.request.locale
+            texts = get_speech_text(locale)
 
             # Get device location
             success, location_result = get_device_location(
@@ -350,6 +299,7 @@ class PrayerNotificationService:
                 reminder_service = (
                     handler_input.service_client_factory.get_reminder_management_service()
                 )
+
                 logger.info("Setting up prayer reminders")
 
                 reminders, formatted_times = (
@@ -380,7 +330,11 @@ class PrayerNotificationService:
                 )
 
                 if e.status_code == 401:
+                    # 401 typically means no permission (or skill manifest not updated)
+                    # If it still fails here, either the user closed the permission prompt,
+                    # or Alexa hasn't fully updated the token for this single invocation.
                     logger.info("Asking user to enable reminder permissions")
+
                     return (
                         response_builder.speak(
                             texts.NOTIFY_MISSING_REMINDER_PERMISSIONS
@@ -447,16 +401,31 @@ class PrayerNotificationService:
         if request.name == "AskFor" and request.status.code == "200":
             if request.payload.get("status") == "ACCEPTED":
                 logger.info(
-                    "Permission accepted from Connections.Response. Patching user permissions to include reminder permission."
+                    "Permission accepted. Checking user permissions for reminders."
                 )
 
-                logger.info(
-                    "New permission object", extra={"permissions": request.payload}
+                alexa_permissions = (
+                    handler_input.request_envelope.context.system.user.permissions
                 )
 
-                return PrayerNotificationService.setup_prayer_notifications(
-                    handler_input
+                has_reminder_permission = (
+                    PrayerNotificationService.check_reminder_permission(
+                        alexa_permissions
+                    )
                 )
+
+                if has_reminder_permission:
+                    return PrayerNotificationService.setup_prayer_notifications(
+                        handler_input
+                    )
+                else:
+                    return (
+                        handler_input.response_builder.speak(
+                            texts.REMINDER_PERMISSION_NOT_READY
+                        )
+                        .set_should_end_session(True)
+                        .response
+                    )
             else:
                 logger.info("User denied permission request")
                 return (

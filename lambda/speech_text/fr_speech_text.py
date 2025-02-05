@@ -22,3 +22,4 @@ class SpeechText:
     LOCATION_TEXT = " à {}."
     PRAYER_TIME_REMINDER = "L'heure de la prière {} est arrivée"
     REMINDER_PERMISSION_ALREADY_GRANTED = "Vous avez déjà les permissions pour les rappels. Voulez-vous configurer des rappels quotidiens pour les heures de prière?"
+    REMINDER_PERMISSION_NOT_READY = "Vous n'avez pas les permissions pour les rappels. Veuillez activer les notifications pour configurer des rappels."

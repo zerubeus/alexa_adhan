@@ -66,36 +66,31 @@ class EnableNotificationsIntentHandler(AbstractRequestHandler):
         return is_intent_name("EnableNotificationsIntent")(handler_input)
 
     def handle(self, handler_input):
-        try:
-            locale = handler_input.request_envelope.request.locale
-            texts = get_speech_text(locale)
+        locale = handler_input.request_envelope.request.locale
+        texts = get_speech_text(locale)
 
-            # Check for reminder permissions
-            alexa_permissions = (
-                handler_input.request_envelope.context.system.user.permissions
+        # Check for reminder permissions
+        alexa_permissions = (
+            handler_input.request_envelope.context.system.user.permissions
+        )
+
+        logger.info(
+            "EnableNotificationsIntentHandler Alexa permissions",
+            extra={"permissions": alexa_permissions},
+        )
+
+        has_reminder_permission = PrayerNotificationService.check_reminder_permission(
+            alexa_permissions
+        )
+
+        if not has_reminder_permission:
+            return PrayerNotificationService.request_reminder_permission(
+                handler_input.response_builder, texts
             )
 
-            if not PrayerNotificationService.check_reminder_permission(
-                alexa_permissions
-            ):
-                return PrayerNotificationService.request_reminder_permission(
-                    handler_input.response_builder, texts
-                )
-
-            # If we have permissions, proceed with setup
-            logger.info("Reminder permissions found in scopes, proceeding with setup")
-            return PrayerNotificationService.setup_prayer_notifications(handler_input)
-
-        except Exception as e:
-            logger.exception(
-                "Error in EnableNotificationsIntentHandler",
-                extra={
-                    "error_type": type(e).__name__,
-                    "error": str(e),
-                    "traceback": True,
-                },
-            )
-            return handler_input.response_builder.speak(texts.ERROR).response
+        # If we have permissions, proceed with setup
+        logger.info("Reminder permissions found in scopes, proceeding with setup")
+        return PrayerNotificationService.setup_prayer_notifications(handler_input)
 
 
 class ConnectionsResponseHandler(AbstractRequestHandler):
