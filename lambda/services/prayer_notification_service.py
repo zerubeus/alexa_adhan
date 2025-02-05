@@ -53,26 +53,26 @@ class PrayerNotificationService:
             == "GRANTED"
         )
 
-        if not has_reminder_permission:
-            logger.info(
-                "Reminder permissions not found in scopes or not granted",
-                extra={
-                    "has_permissions": bool(alexa_permissions),
-                    "has_scopes": (
-                        hasattr(alexa_permissions, "scopes")
-                        if alexa_permissions
-                        else False
-                    ),
-                    "scopes": (
-                        alexa_permissions.scopes
-                        if (alexa_permissions and hasattr(alexa_permissions, "scopes"))
-                        else None
-                    ),
-                    "reminder_permission": permissions["reminder_rw"],
-                },
-            )
-            return False
-        return True
+        if has_reminder_permission:
+            return True
+
+        logger.info(
+            "Reminder permissions not found in scopes or not granted",
+            extra={
+                "has_permissions": bool(alexa_permissions),
+                "has_scopes": (
+                    hasattr(alexa_permissions, "scopes") if alexa_permissions else False
+                ),
+                "scopes": (
+                    alexa_permissions.scopes
+                    if (alexa_permissions and hasattr(alexa_permissions, "scopes"))
+                    else None
+                ),
+                "permissions": alexa_permissions,
+                "reminder_permission": permissions["reminder_rw"],
+            },
+        )
+        return False
 
     @staticmethod
     def request_reminder_permission(response_builder, texts):
