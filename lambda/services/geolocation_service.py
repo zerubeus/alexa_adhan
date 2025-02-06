@@ -130,7 +130,6 @@ def get_device_location(
                     "raw_geolocation": str(geolocation) if geolocation else None,
                 },
             )
-
             if not geolocation or not geolocation.coordinate:
                 logger.warning(
                     "No geolocation data available",
@@ -144,17 +143,13 @@ def get_device_location(
                     },
                 )
                 return False, response_builder.speak(texts.NO_LOCATION).response
-
             latitude = geolocation.coordinate.latitude_in_degrees
             longitude = geolocation.coordinate.longitude_in_degrees
-
             logger.info(
                 "Successfully retrieved coordinates",
                 extra={"latitude": latitude, "longitude": longitude},
             )
-
             return True, (latitude, longitude)
-
         except ServiceException as se:
             logger.error(
                 "ServiceException in get_device_location",
@@ -164,6 +159,17 @@ def get_device_location(
                     "status_code": getattr(se, "status_code", None),
                 },
             )
+            if se.status_code == 403:
+                return (
+                    False,
+                    response_builder.speak(texts.NOTIFY_MISSING_LOCATION_PERMISSIONS)
+                    .set_card(
+                        AskForPermissionsConsentCard(
+                            permissions=permissions["geolocation_r"]
+                        )
+                    )
+                    .response,
+                )
             return False, response_builder.speak(texts.LOCATION_FAILURE).response
         except Exception as e:
             logger.error(

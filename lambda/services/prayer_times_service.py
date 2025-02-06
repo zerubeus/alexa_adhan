@@ -15,6 +15,7 @@ from ask_sdk_model.interfaces.audioplayer import (
 from services.geolocation_service import get_device_location, get_city_name
 from speech_text import get_speech_text
 from auth.auth_permissions import permissions
+from ask_sdk_model.services import ServiceException
 
 logger = Logger()
 
@@ -118,7 +119,7 @@ class PrayerService:
         if not (alexa_permissions and alexa_permissions.consent_token):
             logger.warning("Missing permissions for device address")
             return (
-                response_builder.speak(texts.NOTIFY_MISSING_PERMISSIONS)
+                response_builder.speak(texts.NOTIFY_MISSING_LOCATION_PERMISSIONS)
                 .set_card(
                     AskForPermissionsConsentCard(
                         permissions=permissions["full_address_r"]
@@ -151,6 +152,8 @@ class PrayerService:
                 .set_should_end_session(True)
                 .response
             )
+        except ServiceException as se:
+            return PrayerService.handle_service_exception(handler_input, se)
         except Exception as e:
             logger.error(
                 "Error getting prayer times",
