@@ -124,6 +124,7 @@ class PrayerService:
                         permissions=permissions["full_address_r"]
                     )
                 )
+                .set_should_end_session(False)
                 .response
             )
 
@@ -136,18 +137,30 @@ class PrayerService:
 
         latitude, longitude = location_result
 
-        prayer_times = PrayerService.get_prayer_times(latitude, longitude)
-        formatted_times = PrayerService.format_prayer_times(prayer_times)
+        try:
+            prayer_times = PrayerService.get_prayer_times(latitude, longitude)
+            formatted_times = PrayerService.format_prayer_times(prayer_times)
 
-        city_name = get_city_name(latitude, longitude)
-        location_text = texts.LOCATION_TEXT.format(city_name) if city_name else ""
-        speech_text = texts.PRIER_TIMES.format(formatted_times) + location_text
+            city_name = get_city_name(latitude, longitude)
+            location_text = texts.LOCATION_TEXT.format(city_name) if city_name else ""
+            speech_text = texts.PRIER_TIMES.format(formatted_times) + location_text
 
-        return (
-            response_builder.speak(speech_text)
-            .set_card(SimpleCard("Prayer Times", speech_text))
-            .response
-        )
+            return (
+                response_builder.speak(speech_text)
+                .set_card(SimpleCard("Prayer Times", speech_text))
+                .set_should_end_session(True)
+                .response
+            )
+        except Exception as e:
+            logger.error(
+                "Error getting prayer times",
+                extra={"error_type": type(e).__name__, "error_message": str(e)},
+            )
+            return (
+                response_builder.speak(texts.ERROR)
+                .set_should_end_session(False)
+                .response
+            )
 
     @staticmethod
     def handle_service_exception(handler_input, exception):
@@ -168,12 +181,17 @@ class PrayerService:
                 handler_input.response_builder.speak(
                     texts.NOTIFY_MISSING_LOCATION_PERMISSIONS
                 )
-                .set_card(AskForPermissionsConsentCard(permissions=permissions))
+                .set_card(
+                    AskForPermissionsConsentCard(
+                        permissions=permissions["full_address_r"]
+                    )
+                )
+                .set_should_end_session(False)
                 .response
             )
 
         return (
             handler_input.response_builder.speak(texts.LOCATION_FAILURE)
-            .ask(texts.LOCATION_FAILURE)
+            .set_should_end_session(False)
             .response
         )

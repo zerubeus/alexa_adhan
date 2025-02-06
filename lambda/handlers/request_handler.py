@@ -44,21 +44,15 @@ class GetPrayerTimesIntentHandler(AbstractRequestHandler):
     def handle(self, handler_input):
         try:
             return PrayerService.get_prayer_times_with_location(handler_input)
-        except ServiceException as se:
-            logger.error(
-                "ServiceException in GetPrayerTimesIntentHandler",
-                extra={
-                    "error_type": type(se).__name__,
-                    "error_message": str(se),
-                    "status_code": getattr(se, "status_code", None),
-                },
-            )
-            return PrayerService.handle_service_exception(handler_input, se)
         except Exception as e:
             logger.exception(f"Error in GetPrayerTimesIntentHandler: {e}")
-            return handler_input.response_builder.speak(
-                get_speech_text(handler_input.request_envelope.request.locale).ERROR
-            ).response
+            return (
+                handler_input.response_builder.speak(
+                    get_speech_text(handler_input.request_envelope.request.locale).ERROR
+                )
+                .set_should_end_session(False)
+                .response
+            )
 
 
 class EnableNotificationsIntentHandler(AbstractRequestHandler):
