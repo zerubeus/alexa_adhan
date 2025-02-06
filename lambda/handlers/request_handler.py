@@ -13,28 +13,7 @@ from speech_text import get_speech_text
 logger = Logger()
 
 
-class SessionEndedRequestHandler(AbstractRequestHandler):
-    def can_handle(self, handler_input):
-        return is_request_type("SessionEndedRequest")(handler_input)
-
-    def handle(self, handler_input):
-        return handler_input.response_builder.response
-
-
-class LaunchRequestHandler(AbstractRequestHandler):
-    def can_handle(self, handler_input):
-        return is_request_type("LaunchRequest")(handler_input)
-
-    def handle(self, handler_input):
-        locale = handler_input.request_envelope.request.locale
-        texts = get_speech_text(locale)
-
-        return (
-            handler_input.response_builder.speak(texts.WELCOME)
-            .ask(texts.WHAT_DO_YOU_WANT)
-            .set_should_end_session(False)
-            .response
-        )
+# [Prayer times intent handlers]
 
 
 class GetPrayerTimesIntentHandler(AbstractRequestHandler):
@@ -43,6 +22,17 @@ class GetPrayerTimesIntentHandler(AbstractRequestHandler):
 
     def handle(self, handler_input):
         return PrayerService.get_prayer_times_with_location(handler_input)
+
+
+class GetPrayerTimesExceptionHandler(AbstractExceptionHandler):
+    def can_handle(self, handler_input, exception):
+        return isinstance(exception, ServiceException)
+
+    def handle(self, handler_input, exception):
+        return PrayerService.handle_service_exception(handler_input, exception)
+
+
+# [Prayer notification intent handlers]
 
 
 class EnableNotificationsIntentHandler(AbstractRequestHandler):
@@ -85,12 +75,31 @@ class ConnectionsResponseHandler(AbstractRequestHandler):
         return PrayerNotificationService.handle_connections_response(handler_input)
 
 
-class GetPrayerTimesExceptionHandler(AbstractExceptionHandler):
-    def can_handle(self, handler_input, exception):
-        return isinstance(exception, ServiceException)
+# [General intent handlers]
 
-    def handle(self, handler_input, exception):
-        return PrayerService.handle_service_exception(handler_input, exception)
+
+class SessionEndedRequestHandler(AbstractRequestHandler):
+    def can_handle(self, handler_input):
+        return is_request_type("SessionEndedRequest")(handler_input)
+
+    def handle(self, handler_input):
+        return handler_input.response_builder.response
+
+
+class LaunchRequestHandler(AbstractRequestHandler):
+    def can_handle(self, handler_input):
+        return is_request_type("LaunchRequest")(handler_input)
+
+    def handle(self, handler_input):
+        locale = handler_input.request_envelope.request.locale
+        texts = get_speech_text(locale)
+
+        return (
+            handler_input.response_builder.speak(texts.WELCOME)
+            .ask(texts.WHAT_DO_YOU_WANT)
+            .set_should_end_session(False)
+            .response
+        )
 
 
 class CatchAllExceptionHandler(AbstractExceptionHandler):
