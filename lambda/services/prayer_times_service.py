@@ -54,7 +54,7 @@ class PrayerService:
                 return data["data"]["timings"]
             except requests.exceptions.RequestException as e:
                 logger.error(
-                    "Aladhan API error",
+                    "priyer_times_service: Aladhan API error",
                     extra={
                         "attempt": attempt + 1,
                         "max_retries": PrayerService.MAX_RETRIES,
@@ -116,7 +116,9 @@ class PrayerService:
         alexa_permissions = req_envelope.context.system.user.permissions
 
         if not (alexa_permissions and alexa_permissions.consent_token):
-            logger.warning("Missing permissions for device address")
+            logger.warning(
+                "priyer_times_service: Missing permissions for device address"
+            )
             return (
                 response_builder.speak(texts.NOTIFY_MISSING_PERMISSIONS)
                 .set_card(
@@ -153,7 +155,7 @@ class PrayerService:
             )
         except Exception as e:
             logger.error(
-                "Error getting prayer times",
+                "priyer_times_service: Error getting prayer times",
                 extra={"error_type": type(e).__name__, "error_message": str(e)},
             )
             return (
@@ -175,6 +177,11 @@ class PrayerService:
         """
         locale = handler_input.request_envelope.request.locale
         texts = get_speech_text(locale)
+
+        logger.info(
+            "priyer_times_service: Handling service exception",
+            extra={"exception": exception},
+        )
 
         if exception.status_code == 403:
             return (
