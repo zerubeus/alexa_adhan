@@ -4,11 +4,13 @@ from ask_sdk_core.dispatch_components import (
 )
 from ask_sdk_core.utils import is_request_type, is_intent_name
 from ask_sdk_model.services import ServiceException
+from ask_sdk_model.ui import AskForPermissionsConsentCard
 from aws_lambda_powertools import Logger
 
 from services.prayer_notification_service import PrayerNotificationService
 from services.prayer_times_service import PrayerService
 from speech_text import get_speech_text
+from auth.auth_permissions import permissions
 
 logger = Logger()
 
@@ -29,7 +31,22 @@ class GetPrayerTimesExceptionHandler(AbstractExceptionHandler):
         return isinstance(exception, ServiceException)
 
     def handle(self, handler_input, exception):
-        return PrayerService.handle_service_exception(handler_input, exception)
+        locale = handler_input.request_envelope.request.locale
+        texts = get_speech_text(locale)
+
+        if exception.status_code == 403:
+            return (
+                handler_input.response_builder.speak(
+                    texts.NOTIFY_MISSING_LOCATION_PERMISSIONS
+                )
+                .set_card(
+                    AskForPermissionsConsentCard(
+                        permissions=permissions["full_address_r"]
+                    )
+                )
+                .response
+            )
+        return handler_input.response_builder.speak(texts.LOCATION_FAILURE).response
 
 
 # [Prayer notification intent handlers]

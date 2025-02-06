@@ -5,12 +5,12 @@ from handlers.request_handler import (
     LaunchRequestHandler,
     SessionEndedRequestHandler,
     GetPrayerTimesIntentHandler,
+    GetPrayerTimesExceptionHandler,
     HelpIntentHandler,
     CancelAndStopIntentHandler,
     FallbackIntentHandler,
     EnableNotificationsIntentHandler,
     ConnectionsResponseHandler,
-    GetPrayerTimesExceptionHandler,
     CatchAllExceptionHandler,
 )
 
