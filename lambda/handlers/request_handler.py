@@ -42,17 +42,7 @@ class GetPrayerTimesIntentHandler(AbstractRequestHandler):
         return is_intent_name("GetPrayerTimesIntent")(handler_input)
 
     def handle(self, handler_input):
-        try:
-            return PrayerService.get_prayer_times_with_location(handler_input)
-        except Exception as e:
-            logger.exception(f"Error in GetPrayerTimesIntentHandler: {e}")
-            return (
-                handler_input.response_builder.speak(
-                    get_speech_text(handler_input.request_envelope.request.locale).ERROR
-                )
-                .set_should_end_session(False)
-                .response
-            )
+        return PrayerService.get_prayer_times_with_location(handler_input)
 
 
 class EnableNotificationsIntentHandler(AbstractRequestHandler):
@@ -113,7 +103,9 @@ class CatchAllExceptionHandler(AbstractExceptionHandler):
 
         logger.exception(f"Unexpected error: {exception}")
         return (
-            handler_input.response_builder.speak(texts.ERROR).ask(texts.ERROR).response
+            handler_input.response_builder.speak(texts.ERROR)
+            .set_should_end_session(False)
+            .response
         )
 
 
