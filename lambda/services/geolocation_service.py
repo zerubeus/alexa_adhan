@@ -8,7 +8,7 @@ from aws_lambda_powertools import Logger
 from auth.auth_permissions import permissions
 from speech_text import get_speech_text
 
-logger = Logger()
+logger = Logger(service="geolocation_service")
 
 
 def get_city_name(lat: float, lon: float) -> Optional[str]:
@@ -57,7 +57,7 @@ def get_coordinates_from_address(address_parts: dict) -> Optional[tuple[float, f
         return None
     except Exception as e:
         logger.error(
-            "geolocation_service: Error converting address to coordinates",
+            "Error converting address to coordinates",
             extra={"error_type": type(e).__name__, "error_message": str(e)},
         )
         return None
@@ -92,7 +92,7 @@ def get_device_location(
         )
 
         logger.info(
-            "geolocation_service: Checking location permissions",
+            "Checking location permissions",
             extra={
                 "has_permissions": has_permissions,
                 "has_consent_token": has_consent,
@@ -101,7 +101,7 @@ def get_device_location(
 
         if not (has_permissions and has_consent):
             logger.warning(
-                "geolocation_service: Missing location permissions or consent token",
+                "Missing location permissions or consent token",
                 extra={
                     "has_permissions": has_permissions,
                     "has_consent_token": has_consent,
@@ -121,7 +121,7 @@ def get_device_location(
         try:
             geolocation = req_envelope.context.geolocation
             logger.info(
-                "geolocation_service: Geolocation object state",
+                "Geolocation object state",
                 extra={
                     "has_geolocation": bool(geolocation),
                     "has_coordinate": bool(
@@ -133,7 +133,7 @@ def get_device_location(
 
             if not geolocation or not geolocation.coordinate:
                 logger.warning(
-                    "geolocation_service: No geolocation data available",
+                    "No geolocation data available",
                     extra={
                         "has_geolocation": bool(geolocation),
                         "has_coordinate": bool(
@@ -157,7 +157,7 @@ def get_device_location(
 
         except ServiceException as se:
             logger.error(
-                "geolocation_service: ServiceException in get_device_location",
+                "ServiceException in get_device_location",
                 extra={
                     "error_type": type(se).__name__,
                     "error_message": str(se),
@@ -167,21 +167,19 @@ def get_device_location(
             return False, response_builder.speak(texts.LOCATION_FAILURE).response
         except Exception as e:
             logger.error(
-                "geolocation_service: Unexpected error in get_device_location",
+                "Unexpected error in get_device_location",
                 extra={"error_type": type(e).__name__, "error_message": str(e)},
             )
             return False, response_builder.speak(texts.LOCATION_FAILURE).response
     else:
         # Stationary device flow - use Device Settings API
         if not service_client_factory:
-            logger.warning(
-                "geolocation_service: Service client factory not provided for stationary device"
-            )
+            logger.warning("Service client factory not provided for stationary device")
             return False, response_builder.speak(texts.LOCATION_FAILURE).response
 
         api_access_token = req_envelope.context.system.api_access_token
         if not api_access_token:
-            logger.warning("geolocation_service: No API access token available")
+            logger.warning("No API access token available")
             return (
                 False,
                 response_builder.speak(texts.NOTIFY_MISSING_LOCATION_PERMISSIONS)
@@ -235,7 +233,7 @@ def get_device_location(
 
         except ServiceException as se:
             logger.error(
-                "geolocation_service: ServiceException in Device Settings API",
+                "ServiceException in Device Settings API",
                 extra={
                     "error_type": type(se).__name__,
                     "error_message": str(se),
@@ -245,18 +243,14 @@ def get_device_location(
             if se.status_code == 403:
                 return (
                     False,
-                    response_builder.speak(texts.NOTIFY_MISSING_LOCATION_PERMISSIONS)
-                    .set_card(
-                        AskForPermissionsConsentCard(
-                            permissions=permissions["full_address_r"]
-                        )
-                    )
-                    .response,
+                    response_builder.speak(
+                        texts.NOTIFY_MISSING_LOCATION_PERMISSIONS
+                    ).response,
                 )
             return False, response_builder.speak(texts.LOCATION_FAILURE).response
         except Exception as e:
             logger.error(
-                "geolocation_service: Unexpected error in Device Settings API",
+                "Unexpected error in Device Settings API",
                 extra={"error_type": type(e).__name__, "error_message": str(e)},
             )
             return False, response_builder.speak(texts.LOCATION_FAILURE).response

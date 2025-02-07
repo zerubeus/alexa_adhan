@@ -10,7 +10,7 @@ from services.prayer_notification_service import PrayerNotificationService
 from services.prayer_times_service import PrayerService
 from speech_text import get_speech_text
 
-logger = Logger()
+logger = Logger(service="request_handler")
 
 
 # [Prayer times intent handlers]
@@ -43,7 +43,6 @@ class EnableNotificationsIntentHandler(AbstractRequestHandler):
         locale = handler_input.request_envelope.request.locale
         texts = get_speech_text(locale)
 
-        # Check for reminder permissions
         alexa_permissions = (
             handler_input.request_envelope.context.system.user.permissions
         )
@@ -57,14 +56,13 @@ class EnableNotificationsIntentHandler(AbstractRequestHandler):
             alexa_permissions
         )
 
-        if not has_reminder_permission:
-            return PrayerNotificationService.request_reminder_permission(
-                handler_input.response_builder, texts
-            )
+        if has_reminder_permission:
+            logger.info("Reminder permissions found in scopes, proceeding with setup")
+            return PrayerNotificationService.setup_prayer_notifications(handler_input)
 
-        # If we have permissions, proceed with setup
-        logger.info("Reminder permissions found in scopes, proceeding with setup")
-        return PrayerNotificationService.setup_prayer_notifications(handler_input)
+        return PrayerNotificationService.request_reminder_permission(
+            handler_input.response_builder, texts
+        )
 
 
 class ConnectionsResponseHandler(AbstractRequestHandler):

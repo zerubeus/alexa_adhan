@@ -23,7 +23,7 @@ from services.prayer_times_service import PrayerService
 from speech_text import get_speech_text
 from auth.auth_permissions import permissions
 
-logger = Logger()
+logger = Logger(service="prayer_notification_service")
 
 
 class PrayerNotificationService:
@@ -77,43 +77,22 @@ class PrayerNotificationService:
     @staticmethod
     def request_reminder_permission(response_builder, texts):
         """Request reminder permission from the user."""
-        try:
-            return (
-                response_builder.speak(texts.ASK_REMINDER_PERMISSION)
-                .add_directive(
-                    SendRequestDirective(
-                        name="AskFor",
-                        payload={
-                            "@type": "AskForPermissionsConsentRequest",
-                            "@version": "2",
-                            "permissionScopes": [
-                                {
-                                    "permissionScope": permissions["reminder_rw"],
-                                    "consentLevel": "ACCOUNT",
-                                }
-                            ],
-                        },
-                        token="user_reminder_permission",
-                    )
-                )
-                .response
-            )
-        except ServiceException as se:
-            logger.error(
-                "ServiceException while requesting permissions",
-                extra={
-                    "error": str(se),
-                    "status_code": getattr(se, "status_code", None),
+        return response_builder.add_directive(
+            SendRequestDirective(
+                name="AskFor",
+                payload={
+                    "@type": "AskForPermissionsConsentRequest",
+                    "@version": "2",
+                    "permissionScopes": [
+                        {
+                            "permissionScope": permissions["reminder_rw"],
+                            "consentLevel": "ACCOUNT",
+                        }
+                    ],
                 },
+                token="user_reminder_permission",
             )
-            # Fallback to card if voice permission fails
-            return (
-                response_builder.speak(texts.NOTIFY_MISSING_REMINDER_PERMISSIONS)
-                .set_card(
-                    AskForPermissionsConsentCard(permissions=permissions["reminder_rw"])
-                )
-                .response
-            )
+        ).response
 
     @staticmethod
     def setup_prayer_reminders(
@@ -292,6 +271,7 @@ class PrayerNotificationService:
                         "device_id": device_id,
                     },
                 )
+
                 return response_builder.speak(texts.ERROR).response
 
             # Set up reminders
@@ -300,7 +280,7 @@ class PrayerNotificationService:
                     handler_input.service_client_factory.get_reminder_management_service()
                 )
 
-                logger.info("Setting up prayer reminders")
+                logger.info("prayer_notification_service: Setting up prayer reminders")
 
                 reminders, formatted_times = (
                     PrayerNotificationService.setup_prayer_reminders(

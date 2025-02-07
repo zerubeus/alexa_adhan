@@ -16,7 +16,7 @@ from services.geolocation_service import get_device_location, get_city_name
 from speech_text import get_speech_text
 from auth.auth_permissions import permissions
 
-logger = Logger()
+logger = Logger(service="prayer_times_service")
 
 
 class PrayerService:
@@ -54,7 +54,7 @@ class PrayerService:
                 return data["data"]["timings"]
             except requests.exceptions.RequestException as e:
                 logger.error(
-                    "prayer_times_service: Aladhan API error",
+                    "Aladhan API error",
                     extra={
                         "attempt": attempt + 1,
                         "max_retries": PrayerService.MAX_RETRIES,
@@ -116,9 +116,7 @@ class PrayerService:
         alexa_permissions = req_envelope.context.system.user.permissions
 
         if not (alexa_permissions and alexa_permissions.consent_token):
-            logger.warning(
-                "prayer_times_service: Missing permissions for device address"
-            )
+            logger.warning("Missing permissions for device address")
             return (
                 response_builder.speak(texts.NOTIFY_MISSING_PERMISSIONS)
                 .set_card(
@@ -155,7 +153,7 @@ class PrayerService:
             )
         except Exception as e:
             logger.error(
-                "prayer_times_service: Error getting prayer times",
+                "Error getting prayer times",
                 extra={"error_type": type(e).__name__, "error_message": str(e)},
             )
             return (
@@ -179,7 +177,7 @@ class PrayerService:
         texts = get_speech_text(locale)
 
         logger.info(
-            "prayer_times_service: Handling service exception",
+            "Handling service exception",
             extra={"exception": exception},
         )
 
