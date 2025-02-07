@@ -1,9 +1,9 @@
-import pytz
 import datetime
-from aws_lambda_powertools import Logger
-from ask_sdk_model.services import ServiceException
+from typing import List, Tuple
+
+import pytz
 from ask_sdk_model.interfaces.connections import SendRequestDirective
-from ask_sdk_model.ui import AskForPermissionsConsentCard
+from ask_sdk_model.services import ServiceException
 from ask_sdk_model.services.reminder_management import (
     Trigger,
     TriggerType,
@@ -16,12 +16,12 @@ from ask_sdk_model.services.reminder_management import (
     PushNotification,
     PushNotificationStatus,
 )
-from typing import List, Tuple
+from aws_lambda_powertools import Logger
 
+from auth.auth_permissions import permissions
 from services.geolocation_service import get_device_location
 from services.prayer_times_service import PrayerService
 from speech_text import get_speech_text
-from auth.auth_permissions import permissions
 
 logger = Logger(service="prayer_notification_service")
 
@@ -315,17 +315,9 @@ class PrayerNotificationService:
                     # or Alexa hasn't fully updated the token for this single invocation.
                     logger.info("Asking user to enable reminder permissions")
 
-                    return (
-                        response_builder.speak(
-                            texts.NOTIFY_MISSING_REMINDER_PERMISSIONS
-                        )
-                        .set_card(
-                            AskForPermissionsConsentCard(
-                                permissions=permissions["reminder_rw"]
-                            )
-                        )
-                        .response
-                    )
+                    return response_builder.speak(
+                        texts.NOTIFY_MISSING_REMINDER_PERMISSIONS
+                    ).response
                 elif e.status_code == 403:
                     logger.info("Max reminders limit reached")
                     return response_builder.speak(texts.MAX_REMINDERS_ERROR).response

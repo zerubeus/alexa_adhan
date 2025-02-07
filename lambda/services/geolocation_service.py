@@ -2,10 +2,8 @@ from typing import Optional
 
 import requests
 from ask_sdk_model.services import ServiceException
-from ask_sdk_model.ui import AskForPermissionsConsentCard
 from aws_lambda_powertools import Logger
 
-from auth.auth_permissions import permissions
 from speech_text import get_speech_text
 
 logger = Logger(service="geolocation_service")
@@ -109,13 +107,9 @@ def get_device_location(
             )
             return (
                 False,
-                response_builder.speak(texts.NOTIFY_MISSING_LOCATION_PERMISSIONS)
-                .set_card(
-                    AskForPermissionsConsentCard(
-                        permissions=permissions["geolocation_r"]
-                    )
-                )
-                .response,
+                response_builder.speak(
+                    texts.NOTIFY_MISSING_LOCATION_PERMISSIONS
+                ).response,
             )
 
         try:
@@ -173,6 +167,7 @@ def get_device_location(
             return False, response_builder.speak(texts.LOCATION_FAILURE).response
     else:
         # Stationary device flow - use Device Settings API
+
         if not service_client_factory:
             logger.warning("Service client factory not provided for stationary device")
             return False, response_builder.speak(texts.LOCATION_FAILURE).response
@@ -182,13 +177,9 @@ def get_device_location(
             logger.warning("No API access token available")
             return (
                 False,
-                response_builder.speak(texts.NOTIFY_MISSING_LOCATION_PERMISSIONS)
-                .set_card(
-                    AskForPermissionsConsentCard(
-                        permissions=permissions["full_address_r"]
-                    )
-                )
-                .response,
+                response_builder.speak(
+                    texts.NOTIFY_MISSING_LOCATION_PERMISSIONS
+                ).response,
             )
 
         try:

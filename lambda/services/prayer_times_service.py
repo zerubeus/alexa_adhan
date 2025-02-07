@@ -1,20 +1,20 @@
-import os
-import requests
-import time
 import datetime
-import pytz
+import os
+import time
 from typing import Optional
-from aws_lambda_powertools import Logger
-from ask_sdk_model.ui import AskForPermissionsConsentCard, SimpleCard
+
+import pytz
+import requests
 from ask_sdk_model.interfaces.audioplayer import (
     PlayDirective,
     AudioItem,
     Stream,
     PlayBehavior,
 )
+from aws_lambda_powertools import Logger
+
 from services.geolocation_service import get_device_location, get_city_name
 from speech_text import get_speech_text
-from auth.auth_permissions import permissions
 
 logger = Logger(service="prayer_times_service")
 
@@ -119,11 +119,6 @@ class PrayerService:
             logger.warning("Missing permissions for device address")
             return (
                 response_builder.speak(texts.NOTIFY_MISSING_PERMISSIONS)
-                .set_card(
-                    AskForPermissionsConsentCard(
-                        permissions=permissions["full_address_r"]
-                    )
-                )
                 .set_should_end_session(False)
                 .response
             )
@@ -147,7 +142,6 @@ class PrayerService:
 
             return (
                 response_builder.speak(speech_text)
-                .set_card(SimpleCard("Prayer Times", speech_text))
                 .set_should_end_session(True)
                 .response
             )
@@ -185,11 +179,6 @@ class PrayerService:
             return (
                 handler_input.response_builder.speak(
                     texts.NOTIFY_MISSING_LOCATION_PERMISSIONS
-                )
-                .set_card(
-                    AskForPermissionsConsentCard(
-                        permissions=permissions["full_address_r"]
-                    )
                 )
                 .set_should_end_session(False)
                 .response
