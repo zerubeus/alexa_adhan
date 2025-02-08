@@ -75,7 +75,7 @@ def get_device_location(
     )
 
     logger.info(
-        "geolocation_service: Checking device capabilities",
+        "Checking device capabilities",
         extra={
             "supports_geolocation": supports_geolocation,
         },
@@ -188,6 +188,12 @@ def get_device_location(
 
             try:
                 addr = device_addr_client.get_full_address(device_id)
+
+                logger.info(
+                    "Retrieved address from Device Settings API",
+                    extra={"address": addr},
+                )
+
                 address_parts = {
                     "addressLine1": addr.addressLine1,
                     "city": addr.city,
@@ -211,6 +217,7 @@ def get_device_location(
             )
 
             coordinates = get_coordinates_from_address(address_parts)
+
             if coordinates:
                 latitude, longitude = coordinates
                 logger.info(
