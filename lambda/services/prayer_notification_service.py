@@ -340,12 +340,7 @@ class PrayerNotificationService:
 
         except Exception as e:
             logger.exception(
-                "Error in setup_prayer_notifications",
-                extra={
-                    "error_type": type(e).__name__,
-                    "error": str(e),
-                    "traceback": True,
-                },
+                f"Failed to set up prayer reminders: {str(e)}",
             )
 
             return handler_input.response_builder.speak(texts.ERROR).response
