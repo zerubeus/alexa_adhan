@@ -14,9 +14,7 @@ class SpeechText:
     GOODBYE = "Goodbye!"
     ASK_REMINDER_PERMISSION = "Would you like me to set up daily prayer time reminders?"
     MAX_REMINDERS_ERROR = "Sorry, you've reached the maximum number of reminders. Please delete some existing reminders and try again."
-    REMINDER_SETUP_CONFIRMATION = (
-        "I'll set up daily reminders for the following prayer times: {}"
-    )
+    REMINDER_SETUP_CONFIRMATION = "I'll set up daily prayer reminders"
     PERMISSION_DENIED = "Okay, I won't set up any reminders. You can ask me again anytime if you change your mind."
     PRIER_TIMES = "The prayer times for today are: {}."
     PRAYER_TIME_REMINDER = "Time for {} prayer"

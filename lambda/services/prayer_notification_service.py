@@ -297,6 +297,10 @@ class PrayerNotificationService:
                         "formatted_times": formatted_times,
                     },
                 )
+
+                return response_builder.speak(
+                    texts.REMINDER_SETUP_CONFIRMATION.format(formatted_times)
+                ).response
             except ServiceException as e:
                 logger.error(
                     "Failed to set up reminders",
