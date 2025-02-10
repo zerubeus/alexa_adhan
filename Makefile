@@ -62,8 +62,15 @@ release:
 	
 	@echo "Creating new release $(NEW_VERSION)..."
 	
-	@# Collect commit messages since last tag
-	$(eval COMMIT_LOG := $(shell git log $(LATEST_TAG)..HEAD --pretty=format:"- %s"))
+	@# Check if this is the first release
+	$(eval IS_FIRST_RELEASE := $(shell git tag -l | wc -l | tr -d ' '))
+	
+	@# Collect commit messages since last tag or all commits if first release
+	$(eval COMMIT_LOG := $(shell if [ "$(IS_FIRST_RELEASE)" -eq "0" ]; then \
+		git log --pretty=format:"- %s"; \
+	else \
+		git log $(LATEST_TAG)..HEAD --pretty=format:"- %s"; \
+	fi))
 	
 	@if [ -z "$(COMMIT_LOG)" ]; then \
 		echo "No new commits since last release $(LATEST_TAG)"; \
@@ -79,3 +86,4 @@ release:
 	@echo "$(COMMIT_LOG)"
 	@echo "\nCreating GitHub release..."
 	gh release create $(NEW_VERSION) --notes "$(COMMIT_LOG)"
+	@echo "GitHub release created successfully"
