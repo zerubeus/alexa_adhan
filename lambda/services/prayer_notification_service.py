@@ -68,7 +68,6 @@ class PrayerNotificationService:
                     if (alexa_permissions and hasattr(alexa_permissions, "scopes"))
                     else None
                 ),
-                "permissions": alexa_permissions,
                 "reminder_permission": permissions["reminder_rw"],
             },
         )

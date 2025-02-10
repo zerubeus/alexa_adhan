@@ -49,20 +49,16 @@ class EnableNotificationsIntentHandler(AbstractRequestHandler):
 
         logger.info(
             "EnableNotificationsIntentHandler Alexa permissions",
-            extra={"permissions": alexa_permissions},
+            extra={"permissions": alexa_permissions.scopes},
         )
 
-        has_reminder_permission = PrayerNotificationService.check_reminder_permission(
-            alexa_permissions
-        )
+        if not (alexa_permissions and alexa_permissions.consent_token):
+            return PrayerNotificationService.request_reminder_permission(
+                handler_input.response_builder, texts
+            )
 
-        if has_reminder_permission:
-            logger.info("Reminder permissions found in scopes, proceeding with setup")
-            return PrayerNotificationService.setup_prayer_notifications(handler_input)
-
-        return PrayerNotificationService.request_reminder_permission(
-            handler_input.response_builder, texts
-        )
+        logger.info("Reminder permissions found in scopes, proceeding with setup")
+        return PrayerNotificationService.setup_prayer_notifications(handler_input)
 
 
 class ConnectionsResponseHandler(AbstractRequestHandler):
