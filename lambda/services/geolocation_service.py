@@ -33,8 +33,6 @@ def get_coordinates_from_address(address_parts: dict) -> Optional[tuple[float, f
             address_components.append(address_parts["addressLine1"])
         if address_parts.get("city"):
             address_components.append(address_parts["city"])
-        if address_parts.get("stateOrRegion"):
-            address_components.append(address_parts["stateOrRegion"])
         if address_parts.get("postalCode"):
             address_components.append(address_parts["postalCode"])
         if address_parts.get("countryCode"):
