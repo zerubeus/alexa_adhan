@@ -62,28 +62,31 @@ release:
 	
 	@echo "Creating new release $(NEW_VERSION)..."
 	
-	@# Check if this is the first release
-	$(eval IS_FIRST_RELEASE := $(shell git tag -l | wc -l | tr -d ' '))
-	
+	@# Create a temporary file for commit messages
+	$(shell rm -f /tmp/release_notes.txt)
 	@# Collect commit messages since last tag or all commits if first release
-	$(eval COMMIT_LOG := $(shell if [ "$(IS_FIRST_RELEASE)" -eq "0" ]; then \
-		git log --pretty=format:"- %s"; \
+	@if [ $$(git tag -l | wc -l | tr -d ' ') -eq 0 ]; then \
+		git log --pretty=format:"%s" | sed 's/^/- /' > /tmp/release_notes.txt; \
 	else \
-		git log $(LATEST_TAG)..HEAD --pretty=format:"- %s"; \
-	fi))
+		git log $(LATEST_TAG)..HEAD --pretty=format:"%s" | sed 's/^/- /' > /tmp/release_notes.txt; \
+	fi
 	
-	@if [ -z "$(COMMIT_LOG)" ]; then \
+	@# Check if we have any commits
+	@if [ ! -s /tmp/release_notes.txt ]; then \
 		echo "No new commits since last release $(LATEST_TAG)"; \
+		rm -f /tmp/release_notes.txt; \
 		exit 1; \
 	fi
 	
-	@# Create annotated tag with commit messages
-	git tag -a $(NEW_VERSION) -m "Release $(NEW_VERSION)" -m "Changes since $(LATEST_TAG):" -m "$(COMMIT_LOG)"
+	@# Create annotated tag with commit messages by combining header with commit logs
+	(echo "Release $(NEW_VERSION)"; echo "Changes since $(LATEST_TAG):"; cat /tmp/release_notes.txt) > /tmp/release_message.txt
+	git tag -a $(NEW_VERSION) -F /tmp/release_message.txt
 	git push origin $(NEW_VERSION)
 	
 	@echo "Release $(NEW_VERSION) created and pushed successfully"
 	@echo "Changes included in this release:"
-	@echo "$(COMMIT_LOG)"
+	@cat /tmp/release_notes.txt
 	@echo "\nCreating GitHub release..."
-	gh release create $(NEW_VERSION) --notes "$(COMMIT_LOG)"
+	gh release create $(NEW_VERSION) -F /tmp/release_notes.txt
+	@rm -f /tmp/release_notes.txt
 	@echo "GitHub release created successfully"
