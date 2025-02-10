@@ -29,37 +29,16 @@ def get_coordinates_from_address(address_parts: dict) -> Optional[tuple[float, f
     try:
         address_components = []
 
-        # For French addresses, format the street address properly
-        if address_parts.get("countryCode") == "FR":
-            street = address_parts.get("addressLine1", "")
-            if street:
-                # Add the street number if it exists in addressLine2
-                if address_parts.get("addressLine2"):
-                    street = f"{address_parts['addressLine2']} {street}"
-                address_components.append(street)
-
-            # Add city with postal code for better accuracy
-            if address_parts.get("city") and address_parts.get("postalCode"):
-                address_components.append(
-                    f"{address_parts['postalCode']} {address_parts['city']}"
-                )
-            elif address_parts.get("city"):
-                address_components.append(address_parts["city"])
-
-            # Add France as country name instead of FR code
-            address_components.append("France")
-        else:
-            # Original logic for other countries
-            if address_parts.get("addressLine1"):
-                address_components.append(address_parts["addressLine1"])
-            if address_parts.get("city"):
-                address_components.append(address_parts["city"])
-            if address_parts.get("stateOrRegion"):
-                address_components.append(address_parts["stateOrRegion"])
-            if address_parts.get("postalCode"):
-                address_components.append(address_parts["postalCode"])
-            if address_parts.get("countryCode"):
-                address_components.append(address_parts["countryCode"])
+        if address_parts.get("addressLine1"):
+            address_components.append(address_parts["addressLine1"])
+        if address_parts.get("city"):
+            address_components.append(address_parts["city"])
+        if address_parts.get("stateOrRegion"):
+            address_components.append(address_parts["stateOrRegion"])
+        if address_parts.get("postalCode"):
+            address_components.append(address_parts["postalCode"])
+        if address_parts.get("countryCode"):
+            address_components.append(address_parts["countryCode"])
 
         if not address_components:
             return None
@@ -71,7 +50,9 @@ def get_coordinates_from_address(address_parts: dict) -> Optional[tuple[float, f
             extra={"query": query, "original_address": address_parts},
         )
 
-        url = f"https://nominatim.openstreetmap.org/search?q={query}&format=json"
+        # URL encode the query and add country code for better results
+        encoded_query = requests.utils.quote(query)
+        url = f"https://nominatim.openstreetmap.org/search?q={encoded_query}&format=json&countrycodes=fr&limit=1"
         headers = {"User-Agent": "AlexaAdhanSkill/1.0"}
 
         response = requests.get(url, headers=headers)
@@ -83,13 +64,21 @@ def get_coordinates_from_address(address_parts: dict) -> Optional[tuple[float, f
 
             logger.warning(
                 "No results found from geocoding service",
-                extra={"query": query, "response": response.text},
+                extra={
+                    "query": query,
+                    "response": response.text,
+                    "url": url,
+                },
             )
         return None
     except Exception as e:
         logger.error(
             "Error converting address to coordinates",
-            extra={"error_type": type(e).__name__, "error_message": str(e)},
+            extra={
+                "error_type": type(e).__name__,
+                "error_message": str(e),
+                "address_parts": address_parts,
+            },
         )
         return None
 
@@ -260,7 +249,7 @@ def get_device_location(
                 )
                 return True, coordinates
 
-            logger.warning("Failed to convert address to coordinates")
+            logger.exception("Failed to convert address to coordinates")
             return False, response_builder.speak(texts.LOCATION_FAILURE).response
 
         except ServiceException as se:
