@@ -50,9 +50,7 @@ def get_coordinates_from_address(address_parts: dict) -> Optional[tuple[float, f
             extra={"query": query, "original_address": address_parts},
         )
 
-        # URL encode the query and add country code for better results
-        encoded_query = requests.utils.quote(query)
-        url = f"https://nominatim.openstreetmap.org/search?q={encoded_query}&format=json&countrycodes=fr&limit=1"
+        url = f"https://nominatim.openstreetmap.org/search?q={query}&format=json&countrycodes=fr&limit=1"
         headers = {"User-Agent": "AlexaAdhanSkill/1.0"}
 
         response = requests.get(url, headers=headers)
