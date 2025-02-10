@@ -249,7 +249,7 @@ def get_device_location(
                 )
                 return True, coordinates
 
-            logger.exception("Failed to convert address to coordinates")
+            logger.error("Failed to convert address to coordinates")
             return False, response_builder.speak(texts.LOCATION_FAILURE).response
 
         except ServiceException as se:
