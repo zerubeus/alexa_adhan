@@ -78,7 +78,6 @@ def get_device_location(
         "Checking device capabilities",
         extra={
             "device_id": req_envelope.context.system.device.device_id,
-            "req_envelope": req_envelope,
             "supports_geolocation": supports_geolocation,
         },
     )
@@ -197,11 +196,11 @@ def get_device_location(
                 )
 
                 address_parts = {
-                    "addressLine1": addr.addressLine1,
+                    "addressLine1": addr.address_line1,
                     "city": addr.city,
-                    "stateOrRegion": addr.stateOrRegion,
-                    "postalCode": addr.postalCode,
-                    "countryCode": addr.countryCode,
+                    "stateOrRegion": addr.state_or_region,
+                    "postalCode": addr.postal_code,
+                    "countryCode": addr.country_code,
                 }
 
             except ServiceException:

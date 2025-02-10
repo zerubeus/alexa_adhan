@@ -9,6 +9,7 @@ create-skill:
 			--manifest ./skill-package/skill.json
 
 build-lambda:
+	poetry install --no-root
 	poetry export --without-hashes > lambda_layers/prayer_times_functions_layers/requirements.txt
 	sam build --use-container
 
