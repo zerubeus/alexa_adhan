@@ -26,8 +26,7 @@ The Alexa Adhan skill is available in:
 ## Todo List
 
 - [x] Intent to get prayer times for today
+- [x] Intent to set reminder for every prayer time
 - [ ] Intent to get next prayer time
-- [ ] Intent to set reminder for every prayer time
 - [ ] Intent to set an audio (Adhan) notification for every prayer (currently not supported by Alexa reminders)
-- [ ] Intent to delete a reminder
 - [ ] Intent to delete all reminders
