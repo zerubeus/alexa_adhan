@@ -1,4 +1,4 @@
-.PHONY: create-skill build-lambda deploy-lambda deploy-skill deploy aws-login upload-media
+.PHONY: create-skill build-lambda deploy-lambda deploy-skill deploy aws-login upload-media release
 
 aws-login:
 	aws sso login --profile zerbania
@@ -47,3 +47,35 @@ upload-media:
 	aws s3 sync ./media s3://$(BUCKET_NAME) --delete --profile zerbania
 
 deploy: build-lambda deploy-lambda upload-media deploy-skill
+
+release:
+	@# Get the latest tag, default to v0.0.0 if no tags exist
+	$(eval LATEST_TAG := $(shell git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0"))
+	@echo "Latest tag: $(LATEST_TAG)"
+	
+	@# Extract version numbers and increment patch version
+	$(eval MAJOR := $(shell echo $(LATEST_TAG) | sed 's/v\([0-9]*\).\([0-9]*\).\([0-9]*\)/\1/'))
+	$(eval MINOR := $(shell echo $(LATEST_TAG) | sed 's/v\([0-9]*\).\([0-9]*\).\([0-9]*\)/\2/'))
+	$(eval PATCH := $(shell echo $(LATEST_TAG) | sed 's/v\([0-9]*\).\([0-9]*\).\([0-9]*\)/\3/'))
+	$(eval NEW_PATCH := $(shell echo $$(($(PATCH) + 1))))
+	$(eval NEW_VERSION := v$(MAJOR).$(MINOR).$(NEW_PATCH))
+	
+	@echo "Creating new release $(NEW_VERSION)..."
+	
+	@# Collect commit messages since last tag
+	$(eval COMMIT_LOG := $(shell git log $(LATEST_TAG)..HEAD --pretty=format:"- %s"))
+	
+	@if [ -z "$(COMMIT_LOG)" ]; then \
+		echo "No new commits since last release $(LATEST_TAG)"; \
+		exit 1; \
+	fi
+	
+	@# Create annotated tag with commit messages
+	git tag -a $(NEW_VERSION) -m "Release $(NEW_VERSION)" -m "Changes since $(LATEST_TAG):" -m "$(COMMIT_LOG)"
+	git push origin $(NEW_VERSION)
+	
+	@echo "Release $(NEW_VERSION) created and pushed successfully"
+	@echo "Changes included in this release:"
+	@echo "$(COMMIT_LOG)"
+	@echo "\nCreating GitHub release..."
+	gh release create $(NEW_VERSION) --notes "$(COMMIT_LOG)"
