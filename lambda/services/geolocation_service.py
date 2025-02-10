@@ -77,6 +77,8 @@ def get_device_location(
     logger.info(
         "Checking device capabilities",
         extra={
+            "device_id": req_envelope.context.system.device.device_id,
+            "req_envelope": req_envelope,
             "supports_geolocation": supports_geolocation,
         },
     )
