@@ -28,21 +28,49 @@ def get_city_name(lat: float, lon: float) -> Optional[str]:
 def get_coordinates_from_address(address_parts: dict) -> Optional[tuple[float, float]]:
     try:
         address_components = []
-        if address_parts.get("addressLine1"):
-            address_components.append(address_parts["addressLine1"])
-        if address_parts.get("city"):
-            address_components.append(address_parts["city"])
-        if address_parts.get("stateOrRegion"):
-            address_components.append(address_parts["stateOrRegion"])
-        if address_parts.get("postalCode"):
-            address_components.append(address_parts["postalCode"])
-        if address_parts.get("countryCode"):
-            address_components.append(address_parts["countryCode"])
+
+        # For French addresses, format the street address properly
+        if address_parts.get("countryCode") == "FR":
+            street = address_parts.get("addressLine1", "")
+            if street:
+                # Add the street number if it exists in addressLine2
+                if address_parts.get("addressLine2"):
+                    street = f"{address_parts['addressLine2']} {street}"
+                address_components.append(street)
+
+            # Add city with postal code for better accuracy
+            if address_parts.get("city") and address_parts.get("postalCode"):
+                address_components.append(
+                    f"{address_parts['postalCode']} {address_parts['city']}"
+                )
+            elif address_parts.get("city"):
+                address_components.append(address_parts["city"])
+
+            # Add France as country name instead of FR code
+            address_components.append("France")
+        else:
+            # Original logic for other countries
+            if address_parts.get("addressLine1"):
+                address_components.append(address_parts["addressLine1"])
+            if address_parts.get("city"):
+                address_components.append(address_parts["city"])
+            if address_parts.get("stateOrRegion"):
+                address_components.append(address_parts["stateOrRegion"])
+            if address_parts.get("postalCode"):
+                address_components.append(address_parts["postalCode"])
+            if address_parts.get("countryCode"):
+                address_components.append(address_parts["countryCode"])
 
         if not address_components:
             return None
 
         query = ", ".join(address_components)
+
+        logger.info(
+            "Geocoding address query",
+            extra={"query": query, "original_address": address_parts},
+        )
+
         url = f"https://nominatim.openstreetmap.org/search?q={query}&format=json"
         headers = {"User-Agent": "AlexaAdhanSkill/1.0"}
 
@@ -52,6 +80,11 @@ def get_coordinates_from_address(address_parts: dict) -> Optional[tuple[float, f
             if results:
                 location = results[0]
                 return float(location["lat"]), float(location["lon"])
+
+            logger.warning(
+                "No results found from geocoding service",
+                extra={"query": query, "response": response.text},
+            )
         return None
     except Exception as e:
         logger.error(
