@@ -26,55 +26,84 @@ def get_city_name(lat: float, lon: float) -> Optional[str]:
 
 
 def get_coordinates_from_address(address_parts: dict) -> Optional[tuple[float, float]]:
-    try:
-        address_components = []
+    """Convert address to coordinates using Nominatim with multiple fallback strategies."""
+    headers = {"User-Agent": "AlexaAdhanSkill/1.0"}
+    country_code = address_parts.get("countryCode", "fr").lower()
 
-        if address_parts.get("addressLine1"):
-            address_components.append(address_parts["addressLine1"])
-        if address_parts.get("city"):
-            address_components.append(address_parts["city"])
-        if address_parts.get("stateOrRegion"):
-            address_components.append(address_parts["stateOrRegion"])
+    # Build multiple query strategies (most specific to least specific)
+    queries_to_try = []
 
-        if not address_components:
-            return None
-
-        query = ", ".join(address_components)
-
-        logger.info(
-            "Geocoding address query",
-            extra={"query": query, "original_address": address_parts},
+    # Strategy 1: Full address with postal code
+    if address_parts.get("addressLine1") and address_parts.get("postalCode"):
+        queries_to_try.append(
+            f"{address_parts['addressLine1']}, {address_parts.get('postalCode')} {address_parts.get('city', '')}"
         )
 
-        url = f"https://nominatim.openstreetmap.org/search?q={query}&format=json&countrycodes=fr&limit=1"
-        headers = {"User-Agent": "AlexaAdhanSkill/1.0"}
+    # Strategy 2: Postal code + city (very reliable in France)
+    if address_parts.get("postalCode") and address_parts.get("city"):
+        queries_to_try.append(
+            f"{address_parts['postalCode']} {address_parts['city']}"
+        )
 
-        response = requests.get(url, headers=headers)
-        if response.status_code == 200:
-            results = response.json()
-            if results:
-                location = results[0]
-                return float(location["lat"]), float(location["lon"])
+    # Strategy 3: Just postal code (works well for French postal codes)
+    if address_parts.get("postalCode"):
+        queries_to_try.append(address_parts["postalCode"])
 
-            logger.warning(
-                "No results found from geocoding service",
+    # Strategy 4: Just city name
+    if address_parts.get("city"):
+        queries_to_try.append(address_parts["city"])
+
+    if not queries_to_try:
+        logger.warning("No valid address components to geocode")
+        return None
+
+    for query in queries_to_try:
+        try:
+            logger.info(
+                "Geocoding address query",
+                extra={"query": query, "original_address": address_parts},
+            )
+
+            url = f"https://nominatim.openstreetmap.org/search?q={query}&format=json&countrycodes={country_code}&limit=1"
+
+            response = requests.get(url, headers=headers)
+            if response.status_code == 200:
+                results = response.json()
+                if results:
+                    location = results[0]
+                    logger.info(
+                        "Geocoding succeeded",
+                        extra={
+                            "query": query,
+                            "lat": location["lat"],
+                            "lon": location["lon"],
+                        },
+                    )
+                    return float(location["lat"]), float(location["lon"])
+
+                logger.warning(
+                    "No results found from geocoding service",
+                    extra={
+                        "query": query,
+                        "response": response.text,
+                    },
+                )
+        except Exception as e:
+            logger.error(
+                "Error in geocoding attempt",
                 extra={
+                    "error_type": type(e).__name__,
+                    "error_message": str(e),
                     "query": query,
-                    "response": response.text,
-                    "url": url,
                 },
             )
-        return None
-    except Exception as e:
-        logger.error(
-            "Error converting address to coordinates",
-            extra={
-                "error_type": type(e).__name__,
-                "error_message": str(e),
-                "address_parts": address_parts,
-            },
-        )
-        return None
+            continue
+
+    logger.error(
+        "All geocoding strategies failed",
+        extra={"address_parts": address_parts, "queries_tried": queries_to_try},
+    )
+    return None
 
 
 def get_device_location(
