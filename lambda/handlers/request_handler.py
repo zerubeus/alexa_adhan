@@ -23,6 +23,14 @@ class GetPrayerTimesIntentHandler(AbstractRequestHandler):
         return PrayerService.get_prayer_times_with_location(handler_input)
 
 
+class GetNextPrayerTimeIntentHandler(AbstractRequestHandler):
+    def can_handle(self, handler_input):
+        return is_intent_name("GetNextPrayerTimeIntent")(handler_input)
+
+    def handle(self, handler_input):
+        return PrayerService.get_next_prayer_with_location(handler_input)
+
+
 class GetPrayerTimesExceptionHandler(AbstractExceptionHandler):
     def can_handle(self, handler_input, exception):
         return isinstance(exception, ServiceException)

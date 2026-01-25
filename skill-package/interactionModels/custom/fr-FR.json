@@ -33,6 +33,16 @@
           ]
         },
         {
+          "name": "GetNextPrayerTimeIntent",
+          "samples": [
+            "quand est la prochaine prière",
+            "dans combien de temps la prochaine prière",
+            "quelle est la prochaine prière",
+            "temps avant la prochaine prière",
+            "prochaine prière"
+          ]
+        },
+        {
           "name": "EnableNotificationsIntent",
           "samples": [
             "activer les notifications de prière",

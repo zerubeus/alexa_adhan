@@ -25,3 +25,6 @@ class SpeechText:
         "Great! Your permissions have been updated. "
         "Please say 'Enable notifications' again, and I'll set up your prayer reminders."
     )
+    NEXT_PRAYER_TIME = "The next prayer is {} in {}."
+    NEXT_PRAYER_LESS_THAN_MINUTE = "The next prayer is {} in less than a minute."
+    NOTIFY_MISSING_PERMISSIONS = "To get prayer times, I need access to your location. Please enable location permissions in the Alexa app."

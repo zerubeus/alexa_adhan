@@ -1,4 +1,3 @@
-
 import requests
 from ask_sdk_model.services import ServiceException
 from aws_lambda_powertools import Logger

@@ -32,6 +32,17 @@
           ]
         },
         {
+          "name": "GetNextPrayerTimeIntent",
+          "samples": [
+            "when is the next prayer",
+            "how much time until the next prayer",
+            "how long until the next prayer",
+            "what is the next prayer",
+            "time until next prayer",
+            "next prayer"
+          ]
+        },
+        {
           "name": "EnableNotificationsIntent",
           "samples": ["enable prayer notifications", "turn on athan"]
         }

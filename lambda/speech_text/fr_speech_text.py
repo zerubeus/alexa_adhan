@@ -27,3 +27,6 @@ class SpeechText:
         "Parfait ! Vos permissions ont été mises à jour. "
         "Veuillez dire 'Activer notifications' à nouveau, et je configurerai vos rappels de prière."
     )
+    NEXT_PRAYER_TIME = "La prochaine prière est {} dans {}."
+    NEXT_PRAYER_LESS_THAN_MINUTE = "La prochaine prière est {} dans moins d'une minute."
+    NOTIFY_MISSING_PERMISSIONS = "Pour obtenir les heures de prière, j'ai besoin d'accéder à votre localisation. Veuillez activer les permissions de localisation dans l'application Alexa."

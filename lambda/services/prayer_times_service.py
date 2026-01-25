@@ -155,6 +155,161 @@ class PrayerService:
             )
 
     @staticmethod
+    def get_next_prayer(
+        prayer_times: dict, user_timezone
+    ) -> tuple[str, datetime.datetime] | None:
+        """Find the next prayer based on current time.
+
+        Args:
+            prayer_times: Dictionary containing prayer times in HH:MM format
+            user_timezone: The user's timezone (pytz timezone object)
+
+        Returns:
+            Tuple of (prayer_name, prayer_datetime) or None if no prayer found
+        """
+        now = datetime.datetime.now(user_timezone)
+        today = now.date()
+
+        for prayer in PrayerService.PRAYERS:
+            if prayer in prayer_times:
+                # Extract just the time part (HH:MM) from potentially longer strings
+                time_str = prayer_times[prayer].split()[0]
+                prayer_time = datetime.datetime.strptime(time_str, "%H:%M").time()
+                prayer_datetime = user_timezone.localize(
+                    datetime.datetime.combine(today, prayer_time)
+                )
+                if prayer_datetime > now:
+                    return (prayer, prayer_datetime)
+
+        # After Isha: next prayer is Fajr tomorrow
+        if "Fajr" in prayer_times:
+            time_str = prayer_times["Fajr"].split()[0]
+            fajr_time = datetime.datetime.strptime(time_str, "%H:%M").time()
+            tomorrow = today + datetime.timedelta(days=1)
+            return (
+                "Fajr",
+                user_timezone.localize(datetime.datetime.combine(tomorrow, fajr_time)),
+            )
+
+        return None
+
+    @staticmethod
+    def format_time_remaining(hours: int, minutes: int, locale: str) -> str:
+        """Format hours and minutes naturally with singular/plural handling.
+
+        Args:
+            hours: Number of hours remaining
+            minutes: Number of minutes remaining
+            locale: The user's locale (e.g., 'en-US', 'fr-FR')
+
+        Returns:
+            Formatted time string (e.g., "2 hours and 15 minutes")
+        """
+        is_french = locale.startswith("fr")
+
+        if is_french:
+            parts = []
+            if hours > 0:
+                parts.append(f"{hours} heure{'s' if hours > 1 else ''}")
+            if minutes > 0:
+                parts.append(f"{minutes} minute{'s' if minutes > 1 else ''}")
+            if not parts:
+                return "moins d'une minute"
+            return " et ".join(parts)
+        else:
+            parts = []
+            if hours > 0:
+                parts.append(f"{hours} hour{'s' if hours > 1 else ''}")
+            if minutes > 0:
+                parts.append(f"{minutes} minute{'s' if minutes > 1 else ''}")
+            if not parts:
+                return "less than a minute"
+            return " and ".join(parts)
+
+    @staticmethod
+    def get_next_prayer_with_location(handler_input):
+        """Get next prayer countdown with location information.
+
+        Args:
+            handler_input: The Alexa handler input
+
+        Returns:
+            Response: Response containing next prayer and time remaining
+        """
+        locale = handler_input.request_envelope.request.locale
+        texts = get_speech_text(locale)
+        req_envelope = handler_input.request_envelope
+        response_builder = handler_input.response_builder
+        alexa_permissions = req_envelope.context.system.user.permissions
+
+        if not (alexa_permissions and alexa_permissions.consent_token):
+            logger.warning("Missing permissions for device address")
+            return (
+                response_builder.speak(texts.NOTIFY_MISSING_PERMISSIONS)
+                .set_should_end_session(False)
+                .response
+            )
+
+        from services.geolocation_service import get_device_location
+
+        success, location_result = get_device_location(
+            req_envelope, response_builder, handler_input.service_client_factory
+        )
+
+        if not success:
+            return location_result
+
+        latitude, longitude = location_result
+
+        try:
+            prayer_times = PrayerService.get_prayer_times(latitude, longitude)
+
+            # Get user's timezone from device settings
+            device_id = req_envelope.context.system.device.device_id
+            ups_service = handler_input.service_client_factory.get_ups_service()
+            timezone_str = ups_service.get_system_time_zone(device_id)
+            user_timezone = pytz.timezone(timezone_str)
+
+            next_prayer = PrayerService.get_next_prayer(prayer_times, user_timezone)
+
+            if next_prayer is None:
+                return (
+                    response_builder.speak(texts.ERROR)
+                    .set_should_end_session(True)
+                    .response
+                )
+
+            prayer_name, prayer_datetime = next_prayer
+            now = datetime.datetime.now(user_timezone)
+            time_diff = prayer_datetime - now
+            total_minutes = int(time_diff.total_seconds() / 60)
+            hours = total_minutes // 60
+            minutes = total_minutes % 60
+
+            time_remaining = PrayerService.format_time_remaining(hours, minutes, locale)
+
+            if total_minutes < 1:
+                speech_text = texts.NEXT_PRAYER_LESS_THAN_MINUTE.format(prayer_name)
+            else:
+                speech_text = texts.NEXT_PRAYER_TIME.format(prayer_name, time_remaining)
+
+            return (
+                response_builder.speak(speech_text)
+                .set_should_end_session(True)
+                .response
+            )
+        except Exception as e:
+            logger.error(
+                "Error getting next prayer time",
+                extra={"error_type": type(e).__name__, "error_message": str(e)},
+            )
+            return (
+                response_builder.speak(texts.ERROR)
+                .set_should_end_session(False)
+                .response
+            )
+
+    @staticmethod
     def handle_service_exception(handler_input, exception):
         """Handle service exceptions and return appropriate responses.
 

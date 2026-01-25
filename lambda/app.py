@@ -6,6 +6,7 @@ from handlers.request_handler import (
     ConnectionsResponseHandler,
     EnableNotificationsIntentHandler,
     FallbackIntentHandler,
+    GetNextPrayerTimeIntentHandler,
     GetPrayerTimesExceptionHandler,
     GetPrayerTimesIntentHandler,
     HelpIntentHandler,
@@ -17,6 +18,7 @@ sb = CustomSkillBuilder(api_client=DefaultApiClient())
 
 sb.add_request_handler(LaunchRequestHandler())
 sb.add_request_handler(GetPrayerTimesIntentHandler())
+sb.add_request_handler(GetNextPrayerTimeIntentHandler())
 sb.add_request_handler(EnableNotificationsIntentHandler())
 sb.add_request_handler(ConnectionsResponseHandler())
 sb.add_request_handler(HelpIntentHandler())
