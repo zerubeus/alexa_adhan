@@ -11,7 +11,7 @@ create-skill:
 build-lambda:
 	uv sync
 	uv export --no-dev --no-hashes --no-emit-project -o lambda_layers/prayer_times_functions_layers/requirements.txt
-	sam build --use-container
+	sam build
 
 deploy-lambda:
 	$(eval SKILL_ID := $(shell jq -r '.profiles.default.skillId' .ask/ask-states.json))
