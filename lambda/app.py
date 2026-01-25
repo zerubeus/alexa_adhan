@@ -1,17 +1,16 @@
-from ask_sdk_core.skill_builder import CustomSkillBuilder
 from ask_sdk_core.api_client import DefaultApiClient
-
+from ask_sdk_core.skill_builder import CustomSkillBuilder
 from handlers.request_handler import (
+    CancelAndStopIntentHandler,
+    CatchAllExceptionHandler,
+    ConnectionsResponseHandler,
+    EnableNotificationsIntentHandler,
+    FallbackIntentHandler,
+    GetPrayerTimesExceptionHandler,
+    GetPrayerTimesIntentHandler,
+    HelpIntentHandler,
     LaunchRequestHandler,
     SessionEndedRequestHandler,
-    GetPrayerTimesIntentHandler,
-    GetPrayerTimesExceptionHandler,
-    HelpIntentHandler,
-    CancelAndStopIntentHandler,
-    FallbackIntentHandler,
-    EnableNotificationsIntentHandler,
-    ConnectionsResponseHandler,
-    CatchAllExceptionHandler,
 )
 
 sb = CustomSkillBuilder(api_client=DefaultApiClient())

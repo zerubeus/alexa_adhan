@@ -1,24 +1,22 @@
 import datetime
-from typing import List, Tuple
 
 import pytz
 from ask_sdk_model.interfaces.connections import SendRequestDirective
 from ask_sdk_model.services import ServiceException
 from ask_sdk_model.services.reminder_management import (
-    Trigger,
-    TriggerType,
+    AlertInfo,
+    PushNotification,
+    PushNotificationStatus,
     Recurrence,
     RecurrenceFreq,
     ReminderRequest,
-    AlertInfo,
     SpokenInfo,
     SpokenText,
-    PushNotification,
-    PushNotificationStatus,
+    Trigger,
+    TriggerType,
 )
-from aws_lambda_powertools import Logger
-
 from auth.auth_permissions import permissions
+from aws_lambda_powertools import Logger
 from services.geolocation_service import get_device_location
 from services.prayer_times_service import PrayerService
 from speech_text import get_speech_text
@@ -99,7 +97,7 @@ class PrayerNotificationService:
         reminder_service,
         user_timezone: pytz.timezone,
         locale: str = "en-US",
-    ) -> Tuple[List[dict], str]:
+    ) -> tuple[list[dict], str]:
         """Set up daily prayer reminders for each prayer time.
 
         Args:
@@ -275,9 +273,7 @@ class PrayerNotificationService:
 
             # Set up reminders
             try:
-                reminder_service = (
-                    handler_input.service_client_factory.get_reminder_management_service()
-                )
+                reminder_service = handler_input.service_client_factory.get_reminder_management_service()
 
                 logger.info("prayer_notification_service: Setting up prayer reminders")
 

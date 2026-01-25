@@ -1,19 +1,17 @@
 import datetime
 import os
 import time
-from typing import Optional
 
 import pytz
 import requests
 from ask_sdk_model.interfaces.audioplayer import (
-    PlayDirective,
     AudioItem,
-    Stream,
     PlayBehavior,
+    PlayDirective,
+    Stream,
 )
 from aws_lambda_powertools import Logger
-
-from services.geolocation_service import get_device_location, get_city_name
+from services.geolocation_service import get_city_name, get_device_location
 from speech_text import get_speech_text
 
 logger = Logger(service="prayer_times_service")
@@ -28,7 +26,7 @@ class PrayerService:
     @staticmethod
     def get_prayer_times(
         latitude: float, longitude: float, method: int = 2
-    ) -> Optional[dict]:
+    ) -> dict | None:
         """
         Get prayer times from Aladhan API with retry logic
         method=2 is Islamic Society of North America (ISNA)

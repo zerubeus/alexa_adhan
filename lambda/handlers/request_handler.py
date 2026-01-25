@@ -1,11 +1,10 @@
 from ask_sdk_core.dispatch_components import (
-    AbstractRequestHandler,
     AbstractExceptionHandler,
+    AbstractRequestHandler,
 )
-from ask_sdk_core.utils import is_request_type, is_intent_name
+from ask_sdk_core.utils import is_intent_name, is_request_type
 from ask_sdk_model.services import ServiceException
 from aws_lambda_powertools import Logger
-
 from services.prayer_notification_service import PrayerNotificationService
 from services.prayer_times_service import PrayerService
 from speech_text import get_speech_text

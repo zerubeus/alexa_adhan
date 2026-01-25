@@ -1,15 +1,13 @@
-from typing import Optional
 
 import requests
 from ask_sdk_model.services import ServiceException
 from aws_lambda_powertools import Logger
-
 from speech_text import get_speech_text
 
 logger = Logger(service="geolocation_service")
 
 
-def get_city_name(lat: float, lon: float) -> Optional[str]:
+def get_city_name(lat: float, lon: float) -> str | None:
     try:
         url = f"https://nominatim.openstreetmap.org/reverse?lat={lat}&lon={lon}&format=json"
         headers = {"User-Agent": "AlexaAdhanSkill/1.0"}
@@ -25,7 +23,7 @@ def get_city_name(lat: float, lon: float) -> Optional[str]:
         return None
 
 
-def get_coordinates_from_address(address_parts: dict) -> Optional[tuple[float, float]]:
+def get_coordinates_from_address(address_parts: dict) -> tuple[float, float] | None:
     """Convert address to coordinates using Nominatim with multiple fallback strategies."""
     headers = {"User-Agent": "AlexaAdhanSkill/1.0"}
     country_code = address_parts.get("countryCode", "fr").lower()
@@ -41,9 +39,7 @@ def get_coordinates_from_address(address_parts: dict) -> Optional[tuple[float, f
 
     # Strategy 2: Postal code + city (very reliable in France)
     if address_parts.get("postalCode") and address_parts.get("city"):
-        queries_to_try.append(
-            f"{address_parts['postalCode']} {address_parts['city']}"
-        )
+        queries_to_try.append(f"{address_parts['postalCode']} {address_parts['city']}")
 
     # Strategy 3: Just postal code (works well for French postal codes)
     if address_parts.get("postalCode"):
